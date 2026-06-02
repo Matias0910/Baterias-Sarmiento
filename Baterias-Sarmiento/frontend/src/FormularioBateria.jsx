@@ -36,7 +36,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
     };
 
     try {
-      const response = await fetch('http://localhost:3001/guardar-reporte', {
+      const response = await fetch('https://baterias-sarmiento-backend.onrender.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reporte)

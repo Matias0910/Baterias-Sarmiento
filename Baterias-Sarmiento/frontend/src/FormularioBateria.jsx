@@ -48,6 +48,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
         const totalV = data.v[idx].reduce((acc, v) => acc + (parseFloat(v) || 0), 0).toFixed(2);
         const autoTotalR = data.r[idx].reduce((acc, r) => acc + (parseFloat(r) || 0), 0).toFixed(2);
         const esGrande = getVasos(idx) === 25;
+        console.log("Valores en cajón " + idx + ":", data.v[idx]);
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>

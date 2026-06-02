@@ -3,14 +3,23 @@ import React, { useState, useEffect } from 'react';
 export default function FormularioBateria({ tipo, equipoId }) {
     const numVasos = tipo === 'china' ? 25 : 4;
 
+    // Función segura para leer localStorage sin errores de formato
+    const safeParse = (key, defaultValue) => {
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+        } catch (e) {
+            return defaultValue;
+        }
+    };
+
     // Inicialización de estados
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
-    const [voltajesC1, setVoltajesC1] = useState(JSON.parse(localStorage.getItem(`vC1-${equipoId}`)) || Array(numVasos).fill(''));
-    const [voltajesC2, setVoltajesC2] = useState(JSON.parse(localStorage.getItem(`vC2-${equipoId}`)) || Array(numVasos).fill(''));
-    const [resC1, setResC1] = useState(JSON.parse(localStorage.getItem(`rC1-${equipoId}`)) || Array(numVasos).fill(''));
-    const [resC2, setResC2] = useState(JSON.parse(localStorage.getItem(`rC2-${equipoId}`)) || Array(numVasos).fill(''));
+    const [voltajesC1, setVoltajesC1] = useState(() => safeParse(`vC1-${equipoId}`, Array(numVasos).fill('')));
+    const [voltajesC2, setVoltajesC2] = useState(() => safeParse(`vC2-${equipoId}`, Array(numVasos).fill('')));
+    const [resC1, setResC1] = useState(() => safeParse(`rC1-${equipoId}`, Array(numVasos).fill('')));
+    const [resC2, setResC2] = useState(() => safeParse(`rC2-${equipoId}`, Array(numVasos).fill('')));
 
-    // Efecto para sincronizar con localStorage cuando cambian los datos
     useEffect(() => {
         localStorage.setItem(`vC1-${equipoId}`, JSON.stringify(voltajesC1));
         localStorage.setItem(`vC2-${equipoId}`, JSON.stringify(voltajesC2));
@@ -19,26 +28,21 @@ export default function FormularioBateria({ tipo, equipoId }) {
         localStorage.setItem('frecuencia', frecuencia);
     }, [voltajesC1, voltajesC2, resC1, resC2, frecuencia, equipoId]);
 
-    // Función para enviar los datos al servidor
     const enviarReporte = async () => {
         const reporte = { equipoId, tipo, frecuencia, voltajesC1, voltajesC2, resC1, resC2, fecha: new Date().toISOString() };
-        
         try {
             const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(reporte)
             });
-            
             const data = await response.json();
             alert(data.mensaje);
         } catch (error) {
-            console.error("Error al conectar:", error);
             alert("Error: No se pudo conectar con el servidor.");
         }
     };
 
-    // Estilos internos simplificados
     const inputStyle = { padding: '5px', backgroundColor: '#1f2937', color: 'white', border: '1px solid #4b5563', width: '90%' };
 
     return (
@@ -60,7 +64,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                                     onChange={(e) => { const n = [...cajon.v]; n[i] = e.target.value; cajon.setV(n); }} />
                             ))}
                         </div>
-                        <p>Resistencias:</p>
+                        <p>Resistencias (mΩ):</p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
                             {cajon.r.map((val, i) => (
                                 <input key={i} style={{...inputStyle, borderColor: '#e11d48'}} placeholder={`R${i+1}`} value={val} 

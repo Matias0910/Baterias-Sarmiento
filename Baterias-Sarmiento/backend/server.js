@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 });
 
 // Ejemplo de ruta donde recibiremos los datos del formulario
-app.post('/guardar-reporte', (req, res) => {
+app.post('/api/guardar', (req, res) => {
   const reporte = req.body;
   console.log('Reporte recibido:', reporte);
   res.json({ mensaje: 'Reporte guardado correctamente' });

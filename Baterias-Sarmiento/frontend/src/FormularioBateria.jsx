@@ -61,6 +61,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
     };
 
     const renderCajon = (idx, label) => {
+        // Cálculo automático añadido
         const totalV = data.v[idx].reduce((acc, v) => acc + (parseFloat(v) || 0), 0).toFixed(2);
         const autoTotalR = data.r[idx].reduce((acc, r) => acc + (parseFloat(r) || 0), 0).toFixed(2);
         const esGrande = getVasos(idx) === 25;
@@ -77,6 +78,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={data.v[idx][0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
+                {/* Total calculado */}
                 <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total V: <strong>{totalV} V</strong></p>
 
                 <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>

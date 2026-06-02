@@ -18,7 +18,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const [resC1, setResC1] = useState(() => safeParse(`rC1-${equipoId}`, Array(numVasos).fill('')));
     const [resC2, setResC2] = useState(() => safeParse(`rC2-${equipoId}`, Array(numVasos).fill('')));
 
-    // Este useEffect fuerza el reseteo cuando cambia el equipo o tipo
     useEffect(() => {
         const storedV1 = safeParse(`vC1-${equipoId}`, []);
         if (!Array.isArray(storedV1) || storedV1.length !== numVasos) {
@@ -65,7 +64,8 @@ export default function FormularioBateria({ tipo, equipoId }) {
             <div style={{ display: 'flex', gap: '20px' }}>
                 {[ { label: 'Cajón 1', v: voltajesC1, setV: setVoltajesC1, r: resC1, setR: setResC1 },
                    { label: 'Cajón 2', v: voltajesC2, setV: setVoltajesC2, r: resC2, setR: setResC2 } ].map((cajon, idx) => {
-                    const totalVoltaje = cajon.v.reduce((acc, val) => acc + (parseFloat(val) || 0), 0).toFixed(2);
+                    const totalV = cajon.v.reduce((acc, val) => acc + (parseFloat(val) || 0), 0).toFixed(2);
+                    const totalR = cajon.r.reduce((acc, val) => acc + (parseFloat(val) || 0), 0).toFixed(2);
                     return (
                         <div key={idx} style={{ flex: 1 }}>
                             <h3>{cajon.label}</h3>
@@ -80,7 +80,8 @@ export default function FormularioBateria({ tipo, equipoId }) {
                                 <input style={inputStyle} placeholder="Voltaje Total" value={cajon.v[0]} 
                                     onChange={(e) => { const n = [...cajon.v]; n[0] = e.target.value; cajon.setV(n); }} />
                             )}
-                            <p style={{ marginTop: '10px', color: '#60a5fa' }}>Total V: <strong>{totalVoltaje} V</strong></p>
+                            <p style={{ marginTop: '10px', color: '#60a5fa' }}>Total V: <strong>{totalV} V</strong></p>
+                            
                             <p>Resistencias (mΩ):</p>
                             {frecuencia === 'bimestral' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
@@ -93,6 +94,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                                 <input style={{...inputStyle, borderColor: '#e11d48'}} placeholder="Resistencia Total" value={cajon.r[0]} 
                                     onChange={(e) => { const n = [...cajon.r]; n[0] = e.target.value; cajon.setR(n); }} />
                             )}
+                            <p style={{ marginTop: '5px', color: '#e11d48' }}>Total R: <strong>{totalR} mΩ</strong></p>
                         </div>
                     );
                 })}

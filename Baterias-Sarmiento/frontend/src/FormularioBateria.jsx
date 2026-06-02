@@ -32,16 +32,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
     };
 
     const enviarReporte = async () => {
-        const reporte = { 
-            equipoId, 
-            tipo, 
-            frecuencia, 
-            orientacion, 
-            tiempoApagado, 
-            data, 
-            fecha: new Date().toISOString() 
-        };
-
+        const reporte = { equipoId, tipo, frecuencia, orientacion, tiempoApagado, data, fecha: new Date().toISOString() };
         try {
             const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
                 method: 'POST',
@@ -49,17 +40,13 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 body: JSON.stringify(reporte)
             });
             const res = await response.json();
-            if (response.ok) alert("✅ " + res.mensaje);
-            else alert("❌ " + res.mensaje);
-        } catch (e) { 
-            alert("⚠️ Error de conexión con el servidor."); 
-        }
+            response.ok ? alert("✅ " + res.mensaje) : alert("❌ " + res.mensaje);
+        } catch (e) { alert("⚠️ Error de conexión con el servidor."); }
     };
 
     const renderCajon = (idx, label) => {
-        // CÁLCULO DE SUMA AUTOMÁTICA
-        const totalV = data.v[idx].reduce((acc, v) => acc + (parseFloat(v.replace(',', '.')) || 0), 0).toFixed(2);
-        const autoTotalR = data.r[idx].reduce((acc, r) => acc + (parseFloat(r.replace(',', '.')) || 0), 0).toFixed(2);
+        const totalV = data.v[idx].reduce((acc, v) => acc + (parseFloat(v) || 0), 0).toFixed(2);
+        const autoTotalR = data.r[idx].reduce((acc, r) => acc + (parseFloat(r) || 0), 0).toFixed(2);
         const esGrande = getVasos(idx) === 25;
 
         return (
@@ -74,7 +61,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={data.v[idx][0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
-                {/* MOSTRAR TOTAL */}
                 <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total V: <strong>{totalV} V</strong></p>
 
                 <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
@@ -83,7 +69,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
                             {data.r[idx].map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
                         </div>
-                        {/* MOSTRAR TOTAL */}
                         <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{autoTotalR} mΩ</strong></p>
                     </>
                 ) : (

@@ -36,23 +36,10 @@ export default function FormularioBateria({ tipo, equipoId }) {
         setData(newData);
     };
 
-    const updateTotR = (cajonIdx, value) => {
+    const updateManualTotR = (cajonIdx, value) => {
         const newData = { ...data };
         newData.totR[cajonIdx] = value;
         setData(newData);
-    };
-
-    const enviarReporte = async () => {
-        const reporte = { equipoId, tipo, frecuencia, orientacion, data, fecha: new Date().toISOString() };
-        try {
-            const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(reporte)
-            });
-            const res = await response.json();
-            alert(res.mensaje);
-        } catch (e) { alert("Error de conexión"); }
     };
 
     const renderCajon = (idx, label) => {
@@ -63,7 +50,8 @@ export default function FormularioBateria({ tipo, equipoId }) {
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
                 <h4 style={{ margin: '0 0 10px 0' }}>{label} ({getVasos(idx)} vasos)</h4>
                 
-                {/* Voltaje */}
+                {/* VOLTAJE: SIEMPRE AUTOMÁTICO */}
+                <p style={{ margin: '5px 0' }}>Voltaje:</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
                         {data.v[idx].map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
@@ -73,10 +61,10 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 )}
                 <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total V: <strong>{totalV} V</strong></p>
 
-                {/* Resistencia */}
+                {/* RESISTENCIA: MANUAL SI ES CHINA, AUTOMÁTICA SI ES ESTÁNDAR */}
                 <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
                 {tipo === 'china' ? (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Ingresar Resistencia Total Manual" value={data.totR[idx]} onChange={(e) => updateTotR(idx, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Ingresar Resistencia Total Manual" value={data.totR[idx]} onChange={(e) => updateManualTotR(idx, e.target.value)} />
                 ) : (
                     frecuencia === 'bimestral' ? (
                         <>
@@ -113,7 +101,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(0, 'Cajón 1')}{renderCajon(1, 'Cajón 2')}</div>
                 <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Once</h3>{renderCajon(2, 'Cajón 3')}{renderCajon(3, 'Cajón 4')}</div>
             </div>
-            <button onClick={enviarReporte} style={{ marginTop: '20px', width: '100%', padding: '15px', backgroundColor: '#3b82f6', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '5px', cursor: 'pointer' }}>ENVIAR REPORTE</button>
+            <button onClick={() => console.log(data)} style={{ marginTop: '20px', width: '100%', padding: '15px', backgroundColor: '#3b82f6', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '5px', cursor: 'pointer' }}>ENVIAR REPORTE</button>
         </div>
     );
 }

@@ -1,23 +1,33 @@
 const express = require('express');
-const cors = require('cors'); // Importamos cors
+const cors = require('cors');
 const app = express();
-const PORT = 3001;
 
-// Configuramos CORS para permitir peticiones desde tu frontend
-app.use(cors());
-app.use(express.json()); // Necesario para recibir los datos en formato JSON
+// Configuración de middlewares
+app.use(cors()); // Permite que tu frontend de Vercel hable con este servidor
+app.use(express.json()); // Necesario para entender los datos que envía el frontend
 
-app.get('/', (req, res) => {
-  res.send('Servidor de Baterías Sarmiento activo');
-});
-
-// Ejemplo de ruta donde recibiremos los datos del formulario
+// Ruta principal para recibir los datos
 app.post('/api/guardar', (req, res) => {
-  const reporte = req.body;
-  console.log('Reporte recibido:', reporte);
-  res.json({ mensaje: 'Reporte guardado correctamente' });
+    const { equipoId, tipo, frecuencia, voltajesC1, voltajesC2, resC1, resC2, fecha } = req.body;
+
+    // Validación de seguridad: resistencias máximas
+    const validarRes = (arr) => arr.some(r => parseFloat(r) > 25);
+
+    if (validarRes(resC1) || validarRes(resC2)) {
+        return res.status(400).json({ 
+            mensaje: "ERROR: Alguna resistencia supera los 25 mΩ. Revisá los valores." 
+        });
+    }
+
+    // Aquí es donde procesarías los datos (guardar en base de datos, etc.)
+    console.log(`Reporte recibido para equipo ${equipoId} el ${fecha}`);
+
+    // Respuesta de éxito
+    res.status(200).json({ mensaje: "Reporte guardado correctamente en el servidor." });
 });
 
+// Inicio del servidor
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Backend escuchando en http://localhost:${PORT}`);
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
 });

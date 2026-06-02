@@ -1,26 +1,37 @@
 import React, { useState, useEffect } from 'react';
 
 export default function FormularioBateria({ tipo, equipoId }) {
-    const vasos = tipo === 'china' ? 25 : 4;
-
+    const [orientacion, setOrientacion] = useState(localStorage.getItem('orientacion') || 'moreno');
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
+
+    // Define cuántos vasos tiene cada cajón según la configuración
+    const getVasos = (idx) => {
+        if (tipo !== 'china') return 4;
+        const esGrande = orientacion === 'moreno' ? (idx < 2) : (idx >= 2);
+        return esGrande ? 25 : 4;
+    };
+
     const [data, setData] = useState({
-        v: [Array(vasos).fill(''), Array(vasos).fill(''), Array(vasos).fill(''), Array(vasos).fill('')],
-        r: [Array(vasos).fill(''), Array(vasos).fill(''), Array(vasos).fill(''), Array(vasos).fill('')],
+        v: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
+        r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
         totR: ['', '', '', '']
     });
 
-    // Cargar datos guardados al iniciar
+    // Resetear datos al cambiar orientación o tipo
     useEffect(() => {
-        const savedData = localStorage.getItem(`data-${equipoId}`);
-        if (savedData) setData(JSON.parse(savedData));
-    }, [equipoId]);
+        setData({
+            v: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
+            r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
+            totR: ['', '', '', '']
+        });
+        localStorage.setItem('orientacion', orientacion);
+    }, [orientacion, tipo]);
 
-    // Guardar automáticamente
+    // Guardado persistente
     useEffect(() => {
-        localStorage.setItem(`data-${equipoId}`, JSON.stringify(data));
+        localStorage.setItem(`data-${equipoId}-${tipo}-${orientacion}`, JSON.stringify(data));
         localStorage.setItem('frecuencia', frecuencia);
-    }, [data, frecuencia, equipoId]);
+    }, [data, frecuencia, equipoId, tipo, orientacion]);
 
     const updateValue = (type, cajonIdx, valIdx, value) => {
         const newData = { ...data };
@@ -35,7 +46,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
     };
 
     const enviarReporte = async () => {
-        const reporte = { equipoId, tipo, frecuencia, data, fecha: new Date().toISOString() };
+        const reporte = { equipoId, tipo, frecuencia, orientacion, data, fecha: new Date().toISOString() };
         try {
             const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
                 method: 'POST',
@@ -51,16 +62,16 @@ export default function FormularioBateria({ tipo, equipoId }) {
         const totalV = data.v[idx].reduce((acc, v) => acc + (parseFloat(v) || 0), 0).toFixed(2);
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
-                <h4 style={{ margin: '0 0 10px 0' }}>{label}</h4>
+                <h4 style={{ margin: '0 0 10px 0' }}>{label} ({getVasos(idx)} vasos)</h4>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
                         {data.v[idx].map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
                     </div>
                 ) : (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={data.v[idx][0]} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={data.v[idx][0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
                 <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total V: <strong>{totalV} V</strong></p>
-                <p style={{ margin: '8px 0' }}>Resistencias (mΩ):</p>
+                <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
                 {frecuencia === 'bimestral' ? (
                     <>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
@@ -69,7 +80,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                         <input style={{ padding: '5px', marginTop: '8px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Total R Manual" value={data.totR[idx]} onChange={(e) => updateTotR(idx, e.target.value)} />
                     </>
                 ) : (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={data.r[idx][0]} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={data.r[idx][0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
             </div>
         );
@@ -78,7 +89,16 @@ export default function FormularioBateria({ tipo, equipoId }) {
     return (
         <div style={{ backgroundColor: '#111827', padding: '20px', color: 'white', borderRadius: '15px', maxWidth: '900px', margin: '0 auto' }}>
             <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId}</h2>
-            <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', backgroundColor: '#374151', color: 'white', borderRadius: '5px' }}>
+            {tipo === 'china' && (
+                <div style={{ marginBottom: '15px' }}>
+                    <label>Orientación de vasos grandes (25): </label>
+                    <select value={orientacion} onChange={(e) => setOrientacion(e.target.value)} style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}>
+                        <option value="moreno">Punta Moreno (Cajón 1 y 2)</option>
+                        <option value="once">Punta Once (Cajón 3 y 4)</option>
+                    </select>
+                </div>
+            )}
+            <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', backgroundColor: '#374151', color: 'white' }}>
                 <option value="quincenal">Quincenal</option>
                 <option value="bimestral">Bimestral</option>
             </select>

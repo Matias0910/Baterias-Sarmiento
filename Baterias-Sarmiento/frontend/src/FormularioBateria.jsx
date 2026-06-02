@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 export default function FormularioBateria({ tipo, equipoId }) {
     const numVasos = tipo === 'china' ? 25 : 4;
 
-    // Función segura para evitar el error de JSON.parse
     const safeParse = (key, defaultValue) => {
         try {
             const data = localStorage.getItem(key);
@@ -13,14 +12,23 @@ export default function FormularioBateria({ tipo, equipoId }) {
         }
     };
 
-    // Estados iniciales
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
     const [voltajesC1, setVoltajesC1] = useState(() => safeParse(`vC1-${equipoId}`, Array(numVasos).fill('')));
     const [voltajesC2, setVoltajesC2] = useState(() => safeParse(`vC2-${equipoId}`, Array(numVasos).fill('')));
     const [resC1, setResC1] = useState(() => safeParse(`rC1-${equipoId}`, Array(numVasos).fill('')));
     const [resC2, setResC2] = useState(() => safeParse(`rC2-${equipoId}`, Array(numVasos).fill('')));
 
-    // Guardado automático en localStorage
+    // Este useEffect fuerza el reseteo cuando cambia el equipo o tipo
+    useEffect(() => {
+        const storedV1 = safeParse(`vC1-${equipoId}`, []);
+        if (!Array.isArray(storedV1) || storedV1.length !== numVasos) {
+            setVoltajesC1(Array(numVasos).fill(''));
+            setVoltajesC2(Array(numVasos).fill(''));
+            setResC1(Array(numVasos).fill(''));
+            setResC2(Array(numVasos).fill(''));
+        }
+    }, [tipo, equipoId, numVasos]);
+
     useEffect(() => {
         localStorage.setItem(`vC1-${equipoId}`, JSON.stringify(voltajesC1));
         localStorage.setItem(`vC2-${equipoId}`, JSON.stringify(voltajesC2));
@@ -50,31 +58,41 @@ export default function FormularioBateria({ tipo, equipoId }) {
         <div style={{ backgroundColor: '#111827', padding: '20px', color: 'white', borderRadius: '15px', maxWidth: '800px', margin: '0 auto' }}>
             <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId} ({tipo.toUpperCase()})</h2>
             <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', backgroundColor: '#1f2937', color: 'white' }}>
-                <option value="quincenal">Quincenal</option>
+                <option value="quincenal">Quincenal (Carga de Totales)</option>
                 <option value="bimestral">Bimestral (Vaso a vaso)</option>
             </select>
 
-            <div style={{ display: 'flex', gap: '20px', flexDirection: 'row' }}>
+            <div style={{ display: 'flex', gap: '20px' }}>
                 {[ { label: 'Cajón 1', v: voltajesC1, setV: setVoltajesC1, r: resC1, setR: setResC1 },
                    { label: 'Cajón 2', v: voltajesC2, setV: setVoltajesC2, r: resC2, setR: setResC2 } ].map((cajon, idx) => {
                     const totalVoltaje = cajon.v.reduce((acc, val) => acc + (parseFloat(val) || 0), 0).toFixed(2);
                     return (
                         <div key={idx} style={{ flex: 1 }}>
                             <h3>{cajon.label}</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                                {cajon.v.map((val, i) => (
-                                    <input key={i} style={inputStyle} placeholder={`V${i+1}`} value={val} 
-                                        onChange={(e) => { const n = [...cajon.v]; n[i] = e.target.value; cajon.setV(n); }} />
-                                ))}
-                            </div>
+                            {frecuencia === 'bimestral' ? (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
+                                    {cajon.v.map((val, i) => (
+                                        <input key={i} style={inputStyle} placeholder={`V${i+1}`} value={val} 
+                                            onChange={(e) => { const n = [...cajon.v]; n[i] = e.target.value; cajon.setV(n); }} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <input style={inputStyle} placeholder="Voltaje Total" value={cajon.v[0]} 
+                                    onChange={(e) => { const n = [...cajon.v]; n[0] = e.target.value; cajon.setV(n); }} />
+                            )}
                             <p style={{ marginTop: '10px', color: '#60a5fa' }}>Total V: <strong>{totalVoltaje} V</strong></p>
                             <p>Resistencias (mΩ):</p>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                                {cajon.r.map((val, i) => (
-                                    <input key={i} style={{...inputStyle, borderColor: '#e11d48'}} placeholder={`R${i+1}`} value={val} 
-                                        onChange={(e) => { const n = [...cajon.r]; n[i] = e.target.value; cajon.setR(n); }} />
-                                ))}
-                            </div>
+                            {frecuencia === 'bimestral' ? (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
+                                    {cajon.r.map((val, i) => (
+                                        <input key={i} style={{...inputStyle, borderColor: '#e11d48'}} placeholder={`R${i+1}`} value={val} 
+                                            onChange={(e) => { const n = [...cajon.r]; n[i] = e.target.value; cajon.setR(n); }} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <input style={{...inputStyle, borderColor: '#e11d48'}} placeholder="Resistencia Total" value={cajon.r[0]} 
+                                    onChange={(e) => { const n = [...cajon.r]; n[0] = e.target.value; cajon.setR(n); }} />
+                            )}
                         </div>
                     );
                 })}

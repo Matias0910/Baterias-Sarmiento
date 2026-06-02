@@ -26,11 +26,9 @@ export default function FormularioBateria({ tipo, equipoId }) {
     }, [orientacion, tipo]);
 
     const updateValue = (type, cajonIdx, valIdx, value) => {
-        setData(prevData => {
-            const newData = { ...prevData };
-            newData[type][cajonIdx][valIdx] = value;
-            return newData;
-        });
+        const newData = { ...data };
+        newData[type][cajonIdx][valIdx] = value;
+        setData(newData);
     };
 
     const enviarReporte = async () => {
@@ -59,7 +57,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
     };
 
     const renderCajon = (idx, label) => {
-        // Cálculo forzado a número para asegurar la suma
+        // CÁLCULO DE SUMA AUTOMÁTICA
         const totalV = data.v[idx].reduce((acc, v) => acc + (parseFloat(v.replace(',', '.')) || 0), 0).toFixed(2);
         const autoTotalR = data.r[idx].reduce((acc, r) => acc + (parseFloat(r.replace(',', '.')) || 0), 0).toFixed(2);
         const esGrande = getVasos(idx) === 25;
@@ -71,23 +69,21 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 <p style={{ margin: '5px 0' }}>Voltaje:</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                        {data.v[idx].map((v, i) => (
-                            <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />
-                        ))}
+                        {data.v[idx].map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
                     </div>
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={data.v[idx][0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
+                {/* MOSTRAR TOTAL */}
                 <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total V: <strong>{totalV} V</strong></p>
 
                 <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
                 {frecuencia === 'bimestral' ? (
                     <>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                            {data.r[idx].map((r, i) => (
-                                <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />
-                            ))}
+                            {data.r[idx].map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
                         </div>
+                        {/* MOSTRAR TOTAL */}
                         <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{autoTotalR} mΩ</strong></p>
                     </>
                 ) : (

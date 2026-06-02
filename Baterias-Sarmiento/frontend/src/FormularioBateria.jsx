@@ -22,7 +22,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
   const parseVal = (v) => parseFloat(String(v).replace(',', '.')) || 0;
   const calcularTotal = (arr) => arr.reduce((acc, v) => acc + parseVal(v), 0).toFixed(2);
 
-  // Lógica para enviar al Backend
+  // Lógica para enviar al Backend en Render
   const enviarReporte = async () => {
     const reporte = {
       equipoId,
@@ -36,16 +36,18 @@ export default function FormularioBateria({ tipo, equipoId }) {
     };
 
     try {
-      const response = await fetch('https://baterias-sarmiento-backend.onrender.com', {
+      // Ajuste: agregué la ruta '/api/guardar' al final. Ajustalo según tu server.js
+      const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reporte)
       });
+      
       const data = await response.json();
-      alert(data.mensaje); 
+      alert(data.mensaje || 'Reporte enviado con éxito'); 
     } catch (error) {
       console.error('Error:', error);
-      alert('Error: Asegurate de que el backend esté corriendo en el puerto 3001');
+      alert('Error: No se pudo conectar con el servidor en la nube. Revisa la consola.');
     }
   };
 

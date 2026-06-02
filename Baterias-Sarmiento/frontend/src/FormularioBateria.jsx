@@ -3,12 +3,30 @@ import { useState, useEffect } from 'react';
 export default function FormularioBateria({ tipo, equipoId }) {
   const numVasosPorCajon = tipo === 'china' ? 25 : 4;
   
+  // Función auxiliar para inicializar estados de forma segura
+  const getInitialState = (key, length) => {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Si el tamaño guardado coincide con el esperado, lo devolvemos
+      if (Array.isArray(parsed) && parsed.length === length) return parsed;
+    }
+    // Si no existe o el tamaño cambió, devolvemos el arreglo nuevo
+    return Array(length).fill('');
+  };
+
   // Estados
-  const [voltajesC1, setVoltajesC1] = useState(() => JSON.parse(localStorage.getItem(`vC1-${equipoId}`)) || Array(numVasosPorCajon).fill(''));
-  const [voltajesC2, setVoltajesC2] = useState(() => JSON.parse(localStorage.getItem(`vC2-${equipoId}`)) || Array(numVasosPorCajon).fill(''));
+  const [voltajesC1, setVoltajesC1] = useState(() => getInitialState(`vC1-${equipoId}`, numVasosPorCajon));
+  const [voltajesC2, setVoltajesC2] = useState(() => getInitialState(`vC2-${equipoId}`, numVasosPorCajon));
   const [resC1, setResC1] = useState(() => localStorage.getItem(`rC1-${equipoId}`) || '');
   const [resC2, setResC2] = useState(() => localStorage.getItem(`rC2-${equipoId}`) || '');
   const [frecuencia, setFrecuencia] = useState(() => localStorage.getItem('frecuencia') || 'quincenal');
+
+  // Forzar actualización si cambia el tipo de batería
+  useEffect(() => {
+    setVoltajesC1(getInitialState(`vC1-${equipoId}`, numVasosPorCajon));
+    setVoltajesC2(getInitialState(`vC2-${equipoId}`, numVasosPorCajon));
+  }, [tipo, numVasosPorCajon, equipoId]);
 
   // Guardado automático en localStorage
   useEffect(() => {
@@ -22,32 +40,19 @@ export default function FormularioBateria({ tipo, equipoId }) {
   const parseVal = (v) => parseFloat(String(v).replace(',', '.')) || 0;
   const calcularTotal = (arr) => arr.reduce((acc, v) => acc + parseVal(v), 0).toFixed(2);
 
-  // Lógica para enviar al Backend en Render
   const enviarReporte = async () => {
-    const reporte = {
-      equipoId,
-      tipo,
-      frecuencia,
-      voltajesC1,
-      voltajesC2,
-      resC1,
-      resC2,
-      fecha: new Date().toISOString()
-    };
-
+    const reporte = { equipoId, tipo, frecuencia, voltajesC1, voltajesC2, resC1, resC2, fecha: new Date().toISOString() };
     try {
-      // Ajuste: agregué la ruta '/api/guardar' al final. Ajustalo según tu server.js
       const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reporte)
       });
-      
       const data = await response.json();
       alert(data.mensaje || 'Reporte enviado con éxito'); 
     } catch (error) {
       console.error('Error:', error);
-      alert('Error: No se pudo conectar con el servidor en la nube. Revisa la consola.');
+      alert('Error de conexión con el servidor.');
     }
   };
 
@@ -61,7 +66,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
   return (
     <div style={styles.container}>
-      <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId} - Configuración {tipo.toUpperCase()}</h2>
+      <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId} - Configuración {tipo.toUpperCase()} ({numVasosPorCajon} vasos)</h2>
       
       <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={styles.select}>
         <option value="quincenal">Quincenal (Carga de Totales)</option>

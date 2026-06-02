@@ -12,12 +12,16 @@ export default function FormularioBateria({ tipo, equipoId }) {
         }
     };
 
+    // Estados
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
     const [voltajesC1, setVoltajesC1] = useState(() => safeParse(`vC1-${equipoId}`, Array(numVasos).fill('')));
     const [voltajesC2, setVoltajesC2] = useState(() => safeParse(`vC2-${equipoId}`, Array(numVasos).fill('')));
     const [resC1, setResC1] = useState(() => safeParse(`rC1-${equipoId}`, Array(numVasos).fill('')));
     const [resC2, setResC2] = useState(() => safeParse(`rC2-${equipoId}`, Array(numVasos).fill('')));
+    const [totalResManualC1, setTotalResManualC1] = useState(() => localStorage.getItem(`totRC1-${equipoId}`) || '');
+    const [totalResManualC2, setTotalResManualC2] = useState(() => localStorage.getItem(`totRC2-${equipoId}`) || '');
 
+    // Efecto para asegurar tamaños correctos de arrays
     useEffect(() => {
         const storedV1 = safeParse(`vC1-${equipoId}`, []);
         if (!Array.isArray(storedV1) || storedV1.length !== numVasos) {
@@ -28,16 +32,19 @@ export default function FormularioBateria({ tipo, equipoId }) {
         }
     }, [tipo, equipoId, numVasos]);
 
+    // Efecto para persistencia
     useEffect(() => {
         localStorage.setItem(`vC1-${equipoId}`, JSON.stringify(voltajesC1));
         localStorage.setItem(`vC2-${equipoId}`, JSON.stringify(voltajesC2));
         localStorage.setItem(`rC1-${equipoId}`, JSON.stringify(resC1));
         localStorage.setItem(`rC2-${equipoId}`, JSON.stringify(resC2));
+        localStorage.setItem(`totRC1-${equipoId}`, totalResManualC1);
+        localStorage.setItem(`totRC2-${equipoId}`, totalResManualC2);
         localStorage.setItem('frecuencia', frecuencia);
-    }, [voltajesC1, voltajesC2, resC1, resC2, frecuencia, equipoId]);
+    }, [voltajesC1, voltajesC2, resC1, resC2, totalResManualC1, totalResManualC2, frecuencia, equipoId]);
 
     const enviarReporte = async () => {
-        const reporte = { equipoId, tipo, frecuencia, voltajesC1, voltajesC2, resC1, resC2, fecha: new Date().toISOString() };
+        const reporte = { equipoId, tipo, frecuencia, voltajesC1, voltajesC2, resC1, resC2, totalResManualC1, totalResManualC2, fecha: new Date().toISOString() };
         try {
             const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
                 method: 'POST',
@@ -47,7 +54,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
             const data = await response.json();
             alert(data.mensaje);
         } catch (error) {
-            alert("Error: No se pudo conectar con el servidor.");
+            alert("Error al conectar con el servidor.");
         }
     };
 
@@ -62,46 +69,41 @@ export default function FormularioBateria({ tipo, equipoId }) {
             </select>
 
             <div style={{ display: 'flex', gap: '20px' }}>
-                {[ { label: 'Cajón 1', v: voltajesC1, setV: setVoltajesC1, r: resC1, setR: setResC1 },
-                   { label: 'Cajón 2', v: voltajesC2, setV: setVoltajesC2, r: resC2, setR: setResC2 } ].map((cajon, idx) => {
+                {[ { label: 'Cajón 1', v: voltajesC1, setV: setVoltajesC1, r: resC1, setR: setResC1, totR: totalResManualC1, setTotR: setTotalResManualC1 },
+                   { label: 'Cajón 2', v: voltajesC2, setV: setVoltajesC2, r: resC2, setR: setResC2, totR: totalResManualC2, setTotR: setTotalResManualC2 } ].map((cajon, idx) => {
                     const totalV = cajon.v.reduce((acc, val) => acc + (parseFloat(val) || 0), 0).toFixed(2);
-                    const totalR = cajon.r.reduce((acc, val) => acc + (parseFloat(val) || 0), 0).toFixed(2);
                     return (
                         <div key={idx} style={{ flex: 1 }}>
                             <h3>{cajon.label}</h3>
                             {frecuencia === 'bimestral' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
                                     {cajon.v.map((val, i) => (
-                                        <input key={i} style={inputStyle} placeholder={`V${i+1}`} value={val} 
-                                            onChange={(e) => { const n = [...cajon.v]; n[i] = e.target.value; cajon.setV(n); }} />
+                                        <input key={i} style={inputStyle} placeholder={`V${i+1}`} value={val} onChange={(e) => { const n = [...cajon.v]; n[i] = e.target.value; cajon.setV(n); }} />
                                     ))}
                                 </div>
                             ) : (
-                                <input style={inputStyle} placeholder="Voltaje Total" value={cajon.v[0]} 
-                                    onChange={(e) => { const n = [...cajon.v]; n[0] = e.target.value; cajon.setV(n); }} />
+                                <input style={inputStyle} placeholder="Voltaje Total" value={cajon.v[0]} onChange={(e) => { const n = [...cajon.v]; n[0] = e.target.value; cajon.setV(n); }} />
                             )}
                             <p style={{ marginTop: '10px', color: '#60a5fa' }}>Total V: <strong>{totalV} V</strong></p>
                             
                             <p>Resistencias (mΩ):</p>
                             {frecuencia === 'bimestral' ? (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                                    {cajon.r.map((val, i) => (
-                                        <input key={i} style={{...inputStyle, borderColor: '#e11d48'}} placeholder={`R${i+1}`} value={val} 
-                                            onChange={(e) => { const n = [...cajon.r]; n[i] = e.target.value; cajon.setR(n); }} />
-                                    ))}
-                                </div>
+                                <>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
+                                        {cajon.r.map((val, i) => (
+                                            <input key={i} style={{...inputStyle, borderColor: '#e11d48'}} placeholder={`R${i+1}`} value={val} onChange={(e) => { const n = [...cajon.r]; n[i] = e.target.value; cajon.setR(n); }} />
+                                        ))}
+                                    </div>
+                                    <input style={{...inputStyle, marginTop: '10px', borderColor: '#34d399', fontWeight: 'bold' }} placeholder="Escribir Total R Manual" value={cajon.totR} onChange={(e) => cajon.setTotR(e.target.value)} />
+                                </>
                             ) : (
-                                <input style={{...inputStyle, borderColor: '#e11d48'}} placeholder="Resistencia Total" value={cajon.r[0]} 
-                                    onChange={(e) => { const n = [...cajon.r]; n[0] = e.target.value; cajon.setR(n); }} />
+                                <input style={{...inputStyle, borderColor: '#e11d48'}} placeholder="Resistencia Total" value={cajon.r[0]} onChange={(e) => { const n = [...cajon.r]; n[0] = e.target.value; cajon.setR(n); }} />
                             )}
-                            <p style={{ marginTop: '5px', color: '#e11d48' }}>Total R: <strong>{totalR} mΩ</strong></p>
                         </div>
                     );
                 })}
             </div>
-            <button onClick={enviarReporte} style={{ marginTop: '20px', width: '100%', padding: '15px', backgroundColor: '#3b82f6', border: 'none', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
-                ENVIAR REPORTE AL SERVIDOR
-            </button>
+            <button onClick={enviarReporte} style={{ marginTop: '20px', width: '100%', padding: '15px', backgroundColor: '#3b82f6', border: 'none', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>ENVIAR REPORTE AL SERVIDOR</button>
         </div>
     );
 }

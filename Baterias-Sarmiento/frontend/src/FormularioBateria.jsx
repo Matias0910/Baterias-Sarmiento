@@ -29,7 +29,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
         setData(prevData => {
             const newData = { ...prevData };
             newData[type][cajonIdx][valIdx] = value;
-            console.log("Estado actualizado:", newData); // Para ver si cambia
             return newData;
         });
     };
@@ -47,18 +46,17 @@ export default function FormularioBateria({ tipo, equipoId }) {
         } catch (e) { alert("⚠️ Error de conexión con el servidor."); }
     };
 
-    
     const renderCajon = (idx, label) => {
-    const vArray = data.v[idx];
-    const rArray = data.r[idx];
-    
-    const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
-    
-    // Aquí aplicamos la división automática si es tipo china
-    let rawTotalR = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-    const totalR = (tipo === 'china' ? (rawTotalR / 2) : rawTotalR).toFixed(2);
-    
-    const esGrande = getVasos(idx) === 25;
+        const vArray = data.v[idx];
+        const rArray = data.r[idx];
+        
+        const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
+        
+        // LÓGICA DE DIVISIÓN: Solo si es tipo 'china'
+        let rawTotalR = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
+        const totalR = (tipo === 'china' ? (rawTotalR / 2) : rawTotalR).toFixed(2);
+        
+        const esGrande = getVasos(idx) === 25;
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
@@ -73,7 +71,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
                 
-                {/* AQUÍ ES DONDE MOSTRÁS EL TOTAL, ASEGURATE QUE SEA ESTA VARIABLE */}
                 <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total: <strong>{totalV} V</strong></p>
 
                 <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
@@ -85,7 +82,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
                 
-                {/* AQUÍ ES DONDE MOSTRÁS EL TOTAL, ASEGURATE QUE SEA ESTA VARIABLE */}
                 <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
                 
                 {esGrande && (

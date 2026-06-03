@@ -49,14 +49,16 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     
     const renderCajon = (idx, label) => {
-        // Cálculo forzado directamente sobre el estado actual
-        const vArray = data.v[idx];
-        const rArray = data.r[idx];
-        
-        const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
-        const totalR = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
-        
-        const esGrande = getVasos(idx) === 25;
+    const vArray = data.v[idx];
+    const rArray = data.r[idx];
+    
+    const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
+    
+    // Aquí aplicamos la división automática si es tipo china
+    let rawTotalR = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
+    const totalR = (tipo === 'china' ? (rawTotalR / 2) : rawTotalR).toFixed(2);
+    
+    const esGrande = getVasos(idx) === 25;
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>

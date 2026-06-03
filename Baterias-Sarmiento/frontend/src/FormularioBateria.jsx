@@ -50,9 +50,16 @@ export default function FormularioBateria({ tipo, equipoId }) {
         
         const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
         
-        // DIVISIÓN POR 2 SOLO SI ES TIPO CHINA
+        // Aseguramos que la comparación sea exacta y limpia
+        const esChina = tipo.toString().trim().toLowerCase() === 'china';
+
         let rawTotalR = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-        const totalR = (tipo === 'china' ? (rawTotalR / 2) : rawTotalR).toFixed(2);
+
+        // Si es 'china', dividimos. Si no, dejamos el valor crudo.
+        const totalR = esChina ? (rawTotalR / 2).toFixed(2) : rawTotalR.toFixed(2);
+
+        // Opcional: Para debuguear y ver qué está pasando en tu consola de navegador (F12)
+            console.log("Tipo recibido:", tipo, "Es China:", esChina, "Total R:", totalR);
         
         const esGrande = getVasos(idx) === 25;
 

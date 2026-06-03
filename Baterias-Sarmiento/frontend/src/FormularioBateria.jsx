@@ -26,12 +26,9 @@ export default function FormularioBateria({ tipo, equipoId }) {
     }, [orientacion, tipo]);
 
     const updateValue = (type, cajonIdx, valIdx, value) => {
-        setData(prevData => {
-            const newData = { ...prevData };
-            newData[type][cajonIdx][valIdx] = value;
-            console.log("Estado actualizado:", newData); // Para ver si cambia
-            return newData;
-        });
+        const newData = { ...data };
+        newData[type][cajonIdx][valIdx] = value;
+        setData(newData);
     };
 
     const enviarReporte = async () => {
@@ -44,47 +41,40 @@ export default function FormularioBateria({ tipo, equipoId }) {
             });
             const res = await response.json();
             response.ok ? alert("✅ " + res.mensaje) : alert("❌ " + res.mensaje);
-        } catch (e) { alert("⚠️ Error de conexión con el servidor."); }
+        } catch (e) { alert("⚠️ Error de conexión."); }
     };
 
-    
     const renderCajon = (idx, label) => {
-        // Cálculo forzado directamente sobre el estado actual
-        const vArray = data.v[idx];
-        const rArray = data.r[idx];
-        
-        const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
-        const totalR = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
-        
+        const totalV = data.v[idx].reduce((acc, v) => acc + (parseFloat(v.toString().replace(',', '.')) || 0), 0).toFixed(2);
+        const autoTotalR = data.r[idx].reduce((acc, r) => acc + (parseFloat(r.toString().replace(',', '.')) || 0), 0).toFixed(2);
         const esGrande = getVasos(idx) === 25;
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
                 <h4 style={{ margin: '0 0 10px 0' }}>{label} ({getVasos(idx)} vasos)</h4>
-                
                 <p style={{ margin: '5px 0' }}>Voltaje:</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                        {vArray.map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
+                        {data.v[idx].map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
                     </div>
                 ) : (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={data.v[idx][0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
-                
-                {/* AQUÍ ES DONDE MOSTRÁS EL TOTAL, ASEGURATE QUE SEA ESTA VARIABLE */}
-                <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total: <strong>{totalV} V</strong></p>
+                {/* AQUÍ VINCULAMOS LA VARIABLE TOTAL */}
+                <p style={{ margin: '8px 0', color: '#60a5fa' }}>Voltaje total: <strong>{totalV} V</strong></p>
 
                 <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
                 {frecuencia === 'bimestral' ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                        {rArray.map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
-                    </div>
+                    <>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
+                            {data.r[idx].map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
+                        </div>
+                        {/* AQUÍ VINCULAMOS LA VARIABLE TOTAL */}
+                        <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{autoTotalR} mΩ</strong></p>
+                    </>
                 ) : (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={data.r[idx][0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
-                
-                {/* AQUÍ ES DONDE MOSTRÁS EL TOTAL, ASEGURATE QUE SEA ESTA VARIABLE */}
-                <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
                 
                 {esGrande && (
                     <input style={{ padding: '5px', marginTop: '10px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Resistencia Total Manual" value={data.totR[idx]} onChange={(e) => { const nd = {...data}; nd.totR[idx] = e.target.value; setData(nd); }} />

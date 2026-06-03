@@ -50,8 +50,16 @@ export default function FormularioBateria({ tipo, equipoId }) {
     };
 
     const renderCajon = (idx, label) => {
-        const totalV = data.v[idx].reduce((acc, v) => acc + (parseFloat(v.toString().replace(',', '.')) || 0), 0).toFixed(2);
-        const autoTotalR = data.r[idx].reduce((acc, r) => acc + (parseFloat(r.toString().replace(',', '.')) || 0), 0).toFixed(2);
+        // Función de suma robusta para asegurar que funcione en cualquier navegador
+        const calcularSuma = (arr) => {
+            return (arr || []).reduce((acc, v) => {
+                const num = parseFloat(String(v || '0').replace(',', '.'));
+                return acc + (isNaN(num) ? 0 : num);
+            }, 0).toFixed(2);
+        };
+
+        const totalV = calcularSuma(data.v[idx]);
+        const autoTotalR = calcularSuma(data.r[idx]);
         const esGrande = getVasos(idx) === 25;
 
         return (

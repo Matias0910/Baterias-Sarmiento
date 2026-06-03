@@ -11,19 +11,17 @@ export default function FormularioBateria({ tipo, equipoId }) {
         return esPuntaGrande ? 25 : 4;
     };
 
-    const [data, setData] = useState({
+    const resetData = () => ({
         v: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
         r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
         totR: ['', '', '', '']
     });
 
+    const [data, setData] = useState(resetData);
+
     useEffect(() => {
-        setData({
-            v: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
-            r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
-            totR: ['', '', '', '']
-        });
-    }, [orientacion, tipo]);
+        setData(resetData());
+    }, [orientacion, tipo, frecuencia]); // Ahora se limpia al cambiar cualquiera de estos
 
     const updateValue = (type, cajonIdx, valIdx, value) => {
         setData(prevData => {
@@ -52,7 +50,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
         
         const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
         
-        // LÓGICA DE DIVISIÓN: Solo si es tipo 'china'
+        // DIVISIÓN POR 2 SOLO SI ES TIPO CHINA
         let rawTotalR = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
         const totalR = (tipo === 'china' ? (rawTotalR / 2) : rawTotalR).toFixed(2);
         

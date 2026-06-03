@@ -42,26 +42,29 @@ export default function FormularioBateria({ tipo, equipoId }) {
             const res = await response.json();
             response.ok ? alert("✅ " + res.mensaje) : alert("❌ " + res.mensaje);
         } catch (e) { alert("⚠️ Error de conexión con el servidor."); }
-    };
-
-    const renderCajon = (idx, label) => {
+        };
+        const renderCajon = (idx, label) => {
         const vArray = data.v[idx];
         const rArray = data.r[idx];
         
+        // --- CÁLCULO DE VOLTAJE ---
         const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
         
-        // Aseguramos que la comparación sea exacta y limpia
-        const esChina = tipo.toString().trim().toLowerCase() === 'china';
-
-        let rawTotalR = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-
-        // Si es 'china', dividimos. Si no, dejamos el valor crudo.
-        const totalR = esChina ? (rawTotalR / 2).toFixed(2) : rawTotalR.toFixed(2);
-
-        // Opcional: Para debuguear y ver qué está pasando en tu consola de navegador (F12)
-            console.log("Tipo recibido:", tipo, "Es China:", esChina, "Total R:", totalR);
+        // --- CÁLCULO DE RESISTENCIA (LÓGICA GLOBAL) ---
+        let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
         
+        let finalR = rawSum;
+
+        // Regla: Solo si es tipo "china" Y es "bimestral", aplicamos la división
+        if (tipo === 'china' && frecuencia === 'bimestral') {
+            finalR = rawSum / 2;
+        }
+
+        const totalR = finalR.toFixed(2);
         const esGrande = getVasos(idx) === 25;
+        
+        // ... (el resto del JSX sigue igual, asegurándote de usar 'totalR' abajo)
+   
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>

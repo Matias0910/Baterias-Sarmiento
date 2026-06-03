@@ -61,6 +61,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
         const totalV = calcularSuma(data.v[idx]);
         const autoTotalR = calcularSuma(data.r[idx]);
         const esGrande = getVasos(idx) === 25;
+        
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>

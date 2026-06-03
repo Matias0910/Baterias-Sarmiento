@@ -51,9 +51,11 @@ export default function FormularioBateria({ tipo, equipoId }) {
         
         const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
         
-        // CÁLCULO PRECISO: Solo divide si es tipo 'china' Y es un cajón grande
         let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-        const totalR = (tipo === 'china' && esGrande ? (rawSum / 2) : rawSum).toFixed(2);
+        
+        // LÓGICA FINAL: Solo divide si es China + Cajón Grande + Bimestral
+        const debeDividir = (tipo === 'china' && esGrande && frecuencia === 'bimestral');
+        const totalR = (debeDividir ? (rawSum / 2) : rawSum).toFixed(2);
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>

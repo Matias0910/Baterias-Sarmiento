@@ -26,9 +26,14 @@ export default function FormularioBateria({ tipo, equipoId }) {
     }, [orientacion, tipo]);
 
     const updateValue = (type, cajonIdx, valIdx, value) => {
-        const newData = { ...data };
-        newData[type][cajonIdx][valIdx] = value;
-        setData(newData);
+        setData(prev => ({
+            ...prev,
+            [type]: prev[type].map((cajon, cIdx) => 
+                cIdx === cajonIdx 
+                ? cajon.map((val, vIdx) => vIdx === valIdx ? value : val) 
+                : cajon
+            )
+        }));
     };
 
     const enviarReporte = async () => {
@@ -65,19 +70,25 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
                 <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
                 {frecuencia === 'bimestral' ? (
-                    <>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                            {data.r[idx].map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
-                        </div>
-                        {/* AQUÍ VINCULAMOS LA VARIABLE TOTAL */}
-                        <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{autoTotalR} mΩ</strong></p>
-                    </>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
+                        {data.r[idx].map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
+                    </div>
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={data.r[idx][0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
+                {/* Movido fuera del condicional para que siempre se vea el total calculado */}
+                <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{autoTotalR} mΩ</strong></p>
                 
                 {esGrande && (
-                    <input style={{ padding: '5px', marginTop: '10px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Resistencia Total Manual" value={data.totR[idx]} onChange={(e) => { const nd = {...data}; nd.totR[idx] = e.target.value; setData(nd); }} />
+                    <input 
+                        style={{ padding: '5px', marginTop: '10px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} 
+                        placeholder="Resistencia Total Manual" 
+                        value={data.totR[idx]} 
+                        onChange={(e) => { 
+                            const val = e.target.value;
+                            setData(prev => ({ ...prev, totR: prev.totR.map((t, i) => i === idx ? val : t) }));
+                        }} 
+                    />
                 )}
             </div>
         );

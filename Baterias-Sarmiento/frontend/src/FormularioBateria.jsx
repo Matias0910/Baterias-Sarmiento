@@ -21,7 +21,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     useEffect(() => {
         setData(resetData());
-    }, [orientacion, tipo, frecuencia]); // Ahora se limpia al cambiar cualquiera de estos
+    }, [orientacion, tipo, frecuencia]);
 
     const updateValue = (type, cajonIdx, valIdx, value) => {
         setData(prevData => {
@@ -41,30 +41,19 @@ export default function FormularioBateria({ tipo, equipoId }) {
             });
             const res = await response.json();
             response.ok ? alert("✅ " + res.mensaje) : alert("❌ " + res.mensaje);
-        } catch (e) { alert("⚠️ Error de conexión con el servidor."); }
-        };
-        const renderCajon = (idx, label) => {
+        } catch (e) { alert("⚠️ Error de conexión."); }
+    };
+
+    const renderCajon = (idx, label) => {
         const vArray = data.v[idx];
         const rArray = data.r[idx];
-        
-        // --- CÁLCULO DE VOLTAJE ---
-        const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
-        
-        // --- CÁLCULO DE RESISTENCIA (LÓGICA GLOBAL) ---
-        let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-        
-        let finalR = rawSum;
-
-        // Regla: Solo si es tipo "china" Y es "bimestral", aplicamos la división
-        if (tipo === 'china' && frecuencia === 'bimestral') {
-            finalR = rawSum / 2;
-        }
-
-        const totalR = finalR.toFixed(2);
         const esGrande = getVasos(idx) === 25;
         
-        // ... (el resto del JSX sigue igual, asegurándote de usar 'totalR' abajo)
-   
+        const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
+        
+        // CÁLCULO PRECISO: Solo divide si es tipo 'china' Y es un cajón grande
+        let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
+        const totalR = (tipo === 'china' && esGrande ? (rawSum / 2) : rawSum).toFixed(2);
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>

@@ -9,9 +9,8 @@ export default function App() {
   return (
     <div style={{ backgroundColor: '#111827', minHeight: '100vh', padding: '20px', color: 'white', fontFamily: 'sans-serif' }}>
       
-      {/* PANTALLA DE INICIO (El selector que querías) */}
       {!iniciado ? (
-        <div style={{ textAlign: 'center', marginTop: '50px' }}>
+        <div style={{ textAlign: 'center', marginTop: '50px', padding: '20px', backgroundColor: '#1f2937', borderRadius: '10px' }}>
           <h2>Gestión de Baterías Sarmiento</h2>
           <input 
             value={config.equipoId} 
@@ -27,12 +26,13 @@ export default function App() {
             <option value="china">Baterías Chinas</option>
             <option value="estandar">Baterías Estándar</option>
           </select>
-          <button onClick={() => setIniciado(true)} style={{ padding: '10px 20px', cursor: 'pointer' }}>Ir al Formulario</button>
+          <button onClick={() => setIniciado(true)} style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '5px' }}>
+            Ir al Formulario
+          </button>
         </div>
       ) : (
-        /* VISTA PRINCIPAL (Cuando ya elegiste el equipo) */
         <>
-          <button onClick={() => setIniciado(false)} style={{ marginBottom: '20px' }}>← Volver al Menú</button>
+          <button onClick={() => setIniciado(false)} style={{ marginBottom: '20px', padding: '8px 12px' }}>← Volver al Menú</button>
           
           <FormularioBateria equipoId={config.equipoId} tipo={config.tipo} />
           

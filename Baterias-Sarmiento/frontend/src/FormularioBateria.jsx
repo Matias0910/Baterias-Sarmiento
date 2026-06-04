@@ -4,6 +4,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const [orientacion, setOrientacion] = useState(localStorage.getItem('orientacion') || 'moreno');
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
     const [tiempoApagado, setTiempoApagado] = useState({ moreno: '', once: '' });
+    const [bateriasChinas, setBateriasChinas] = useState('');
 
     const getVasos = (idx) => {
         if (tipo !== 'china') return 4;
@@ -32,7 +33,17 @@ export default function FormularioBateria({ tipo, equipoId }) {
     };
 
     const enviarReporte = async () => {
-        const reporte = { equipoId, tipo, frecuencia, orientacion, tiempoApagado, data, fecha: new Date().toISOString() };
+        const reporte = { 
+        equipoId, 
+        tipo, 
+        frecuencia, 
+        orientacion, 
+        tiempoApagado, 
+        // Si es china, guardamos el valor; si no, guardamos 0
+        bateriasChinas: tipo === 'china' ? bateriasChinas : 0, 
+        data, 
+        fecha: new Date().toISOString() 
+    };
         try {
             const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
                 method: 'POST',
@@ -48,19 +59,14 @@ export default function FormularioBateria({ tipo, equipoId }) {
         const vArray = data.v[idx];
         const rArray = data.r[idx];
         const esGrande = getVasos(idx) === 25;
-        
         const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
-        
         let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-        
-        // LÓGICA FINAL: Solo divide si es China + Cajón Grande + Bimestral
         const debeDividir = (tipo === 'china' && esGrande && frecuencia === 'bimestral');
         const totalR = (debeDividir ? (rawSum / 2) : rawSum).toFixed(2);
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
                 <h4 style={{ margin: '0 0 10px 0' }}>{label} ({getVasos(idx)} vasos)</h4>
-                
                 <p style={{ margin: '5px 0' }}>Voltaje:</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
@@ -69,9 +75,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
-                
                 <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total: <strong>{totalV} V</strong></p>
-
                 <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
@@ -80,9 +84,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
-                
                 <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
-                
                 {esGrande && (
                     <input style={{ padding: '5px', marginTop: '10px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Resistencia Total Manual" value={data.totR[idx]} onChange={(e) => { const nd = {...data}; nd.totR[idx] = e.target.value; setData(nd); }} />
                 )}
@@ -93,6 +95,18 @@ export default function FormularioBateria({ tipo, equipoId }) {
     return (
         <div style={{ backgroundColor: '#111827', padding: '20px', color: 'white', borderRadius: '15px', maxWidth: '900px', margin: '0 auto' }}>
             <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId}</h2>
+            
+            {tipo === 'china' && (
+    <div style={{ marginBottom: '20px' }}>
+        <label>Cantidad de Baterías Chinas: </label>
+        <input 
+            type="number"
+            value={bateriasChinas}
+            onChange={(e) => setBateriasChinas(e.target.value)}
+            style={{ width: '100%', padding: '10px', backgroundColor: '#374151', color: 'white' }}
+        />
+    </div>
+
             {tipo === 'china' && (
                 <div style={{ marginBottom: '15px' }}>
                     <label>Punta con vasos grandes: </label>

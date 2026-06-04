@@ -36,7 +36,7 @@ export default function Historial() {
                     <tbody>
                         {reportes.map((rep, idx) => (
                             <tr key={idx} style={{ borderBottom: '1px solid #4b5563' }}>
-                                <td style={{ padding: '10px', textAlign: 'center' }}>{new Date(rep.fecha).toLocaleString()}</td>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>{new Date(rep.fecha).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}</td>
                                 <td style={{ padding: '10px', textAlign: 'center' }}>{rep.equipoId}</td>
                                 <td style={{ padding: '10px', textAlign: 'center' }}>{rep.tipo}</td>
                                 <td style={{ padding: '10px', textAlign: 'center' }}>{rep.frecuencia}</td>

@@ -24,8 +24,12 @@ const Reporte = mongoose.model('Reporte', new mongoose.Schema({
     frecuencia: String,
     orientacion: String,
     tiempoApagado: { moreno: String, once: String },
+    bateriasChinas: Number, // Agregamos este campo para guardar la cantidad
     data: Object,
-    fecha: Date
+    fecha: { 
+        type: Date, 
+        default: Date.now // Esto hace que si no envías fecha, se cree automáticamente
+    }
 }));
 
 // Ruta para recibir el reporte desde el frontend

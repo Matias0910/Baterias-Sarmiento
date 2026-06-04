@@ -7,11 +7,15 @@ app.use(cors());
 app.use(express.json());
 
 // Poné tu URL completa acá (con la nueva contraseña)
-const MONGO_URI = "mongodb+srv://chamy241_db_user:Chamycaro0910@cluster0.9rs9wzy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+// Agregamos /SarmientoDB justo después del .net/
+const MONGO_URI = "mongodb+srv://chamy241_db_user:Chamycaro0910@cluster0.9rs9wzy.mongodb.net/SarmientoDB?retryWrites=true&w=majority&appName=Cluster0";
 
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ Conectado a MongoDB Atlas"))
-    .catch(err => console.error("❌ Error de conexión:", err));
+// Busca esta parte en tu server.js y cámbiala por esto:
+mongoose.connect(process.env.MONGO_URI || "mongodb+srv://chamy241_db_user:Chamycaro0910@cluster0.9rs9wzy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
+    dbName: 'SarmientoDB' // <--- ESTO ES LO QUE OBLIGA A USAR ESA BASE
+})
+.then(() => console.log("✅ Conectado a SarmientoDB"))
+.catch(err => console.error("❌ Error de conexión:", err));
 
 // Definimos el modelo de datos
 const Reporte = mongoose.model('Reporte', new mongoose.Schema({

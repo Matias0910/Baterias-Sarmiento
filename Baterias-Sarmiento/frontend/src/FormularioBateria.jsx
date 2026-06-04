@@ -14,8 +14,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     const resetData = () => ({
         v: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
-        r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
-        totR: ['', '', '', '']
+        r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')]
     });
 
     const [data, setData] = useState(resetData);
@@ -39,7 +38,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
             frecuencia, 
             orientacion, 
             tiempoApagado, 
-            bateriasChinas: tipo === 'china' ? bateriasChinas : 0,
+            bateriasChinas: frecuencia === 'quincenal' ? 0 : bateriasChinas,
             data, 
             fecha: new Date().toISOString() 
         };
@@ -84,9 +83,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
                 <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
-                {esGrande && (
-                    <input style={{ padding: '5px', marginTop: '10px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Resistencia Total Manual" value={data.totR[idx]} onChange={(e) => { const nd = {...data}; nd.totR[idx] = e.target.value; setData(nd); }} />
-                )}
             </div>
         );
     };
@@ -97,7 +93,14 @@ export default function FormularioBateria({ tipo, equipoId }) {
             {tipo === 'china' && (
                 <div style={{ marginBottom: '20px' }}>
                     <label>Cantidad de Baterías Chinas: </label>
-                    <input type="number" value={bateriasChinas} onChange={(e) => setBateriasChinas(e.target.value)} style={{ width: '100%', padding: '10px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '5px' }} />
+                    <input 
+                        type="number"
+                        value={frecuencia === 'quincenal' ? '0' : bateriasChinas}
+                        disabled={frecuencia === 'quincenal'}
+                        onChange={(e) => setBateriasChinas(e.target.value)}
+                        placeholder={frecuencia === 'quincenal' ? "Automático (0)" : "Ingrese cantidad"}
+                        style={{ width: '100%', padding: '10px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '5px' }} 
+                    />
                 </div>
             )}
             {tipo === 'china' && (

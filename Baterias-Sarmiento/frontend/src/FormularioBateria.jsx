@@ -5,6 +5,11 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
     const [tiempoApagado, setTiempoApagado] = useState({ moreno: '', once: '' });
     const [bateriasChinas, setBateriasChinas] = useState('');
+    // Estado para los cambios de batería
+    const [cambiosRealizados, setCambiosRealizados] = useState({
+        cajon1: false, cajon2: false, cajon3: false, cajon4: false,
+        observaciones: ""
+    });
 
     const getVasos = (idx) => {
         if (tipo !== 'china') return 4;
@@ -14,8 +19,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     const resetData = () => ({
         v: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
-        r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
-        totR: ['', '', '', ''] // Volvimos a agregar el campo para guardar manual
+        r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')]
     });
 
     const [data, setData] = useState(resetData);
@@ -34,12 +38,9 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     const enviarReporte = async () => {
         const reporte = { 
-            equipoId, 
-            tipo, 
-            frecuencia, 
-            orientacion, 
-            tiempoApagado, 
+            equipoId, tipo, frecuencia, orientacion, tiempoApagado, 
             bateriasChinas: frecuencia === 'quincenal' ? 0 : bateriasChinas,
+            cambiosRealizados, // Aquí se envía el estado de los checkboxes
             data, 
             fecha: new Date().toISOString() 
         };
@@ -57,16 +58,14 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const renderCajon = (idx, label) => {
         const vArray = data.v[idx];
         const rArray = data.r[idx];
-        const esGrande = getVasos(idx) === 25;
         const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
         let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-        const debeDividir = (tipo === 'china' && esGrande && frecuencia === 'bimestral');
-        const totalR = (debeDividir ? (rawSum / 2) : rawSum).toFixed(2);
+        const totalR = (tipo === 'china' && getVasos(idx) === 25 && frecuencia === 'bimestral' ? (rawSum / 2) : rawSum).toFixed(2);
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
                 <h4 style={{ margin: '0 0 10px 0' }}>{label} ({getVasos(idx)} vasos)</h4>
-                <p style={{ margin: '5px 0' }}>Voltaje:</p>
+                <p>Voltaje:</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
                         {vArray.map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
@@ -74,8 +73,8 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
-                <p style={{ margin: '8px 0', color: '#60a5fa' }}>Total: <strong>{totalV} V</strong></p>
-                <p style={{ margin: '8px 0' }}>Resistencia (mΩ):</p>
+                <p style={{ color: '#60a5fa' }}>Total: <strong>{totalV} V</strong></p>
+                <p>Resistencia (mΩ):</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
                         {rArray.map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
@@ -83,12 +82,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
-                <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
-                
-                {/* ESTO SOLO APARECE SI ES BIMESTRAL */}
-                {esGrande && frecuencia === 'bimestral' && (
-                    <input style={{ padding: '5px', marginTop: '10px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Resistencia Total Manual" value={data.totR[idx]} onChange={(e) => { const nd = {...data}; nd.totR[idx] = e.target.value; setData(nd); }} />
-                )}
+                <p style={{ color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
             </div>
         );
     };
@@ -99,43 +93,45 @@ export default function FormularioBateria({ tipo, equipoId }) {
             {tipo === 'china' && (
                 <div style={{ marginBottom: '20px' }}>
                     <label>Cantidad de Baterías Chinas: </label>
-                    <input 
-                        type="number"
-                        value={frecuencia === 'quincenal' ? '0' : bateriasChinas}
-                        disabled={frecuencia === 'quincenal'}
-                        onChange={(e) => setBateriasChinas(e.target.value)}
-                        placeholder={frecuencia === 'quincenal' ? "Automático (0)" : "Ingrese cantidad"}
-                        style={{ width: '100%', padding: '10px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '5px' }} 
-                    />
+                    <input type="number" value={frecuencia === 'quincenal' ? '0' : bateriasChinas} disabled={frecuencia === 'quincenal'} onChange={(e) => setBateriasChinas(e.target.value)} style={{ width: '100%', padding: '10px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '5px' }} />
                 </div>
             )}
-            {tipo === 'china' && (
-                <div style={{ marginBottom: '15px' }}>
-                    <label>Punta con vasos grandes: </label>
-                    <select value={orientacion} onChange={(e) => setOrientacion(e.target.value)} style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}>
-                        <option value="moreno">Moreno</option>
-                        <option value="once">Once</option>
-                    </select>
-                </div>
-            )}
+            <div style={{ marginBottom: '15px' }}>
+                <label>Punta con vasos grandes: </label>
+                <select value={orientacion} onChange={(e) => setOrientacion(e.target.value)} style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}>
+                    <option value="moreno">Moreno</option>
+                    <option value="once">Once</option>
+                </select>
+            </div>
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <div style={{ flex: 1 }}>
-                    <label>Tiempo Apagado Moreno (min): </label>
-                    <input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.moreno} onChange={(e) => setTiempoApagado({...tiempoApagado, moreno: e.target.value})} />
-                </div>
-                <div style={{ flex: 1 }}>
-                    <label>Tiempo Apagado Once (min): </label>
-                    <input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.once} onChange={(e) => setTiempoApagado({...tiempoApagado, once: e.target.value})} />
-                </div>
+                <div style={{ flex: 1 }}><label>Tiempo Apagado Once: </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.once} onChange={(e) => setTiempoApagado({...tiempoApagado, once: e.target.value})} /></div>
+                <div style={{ flex: 1 }}><label>Tiempo Apagado Moreno: </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.moreno} onChange={(e) => setTiempoApagado({...tiempoApagado, moreno: e.target.value})} /></div>
             </div>
             <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', backgroundColor: '#374151', color: 'white' }}>
                 <option value="quincenal">Quincenal</option>
                 <option value="bimestral">Bimestral</option>
             </select>
+            
+            {/* PUNTAS INVERTIDAS: ONCE IZQUIERDA, MORENO DERECHA */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(0, 'Cajón 1')}{renderCajon(1, 'Cajón 2')}</div>
-                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Once</h3>{renderCajon(2, 'Cajón 3')}{renderCajon(3, 'Cajón 4')}</div>
+                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Once</h3>{renderCajon(2, 'Cajón 1')}{renderCajon(3, 'Cajón 2')}</div>
+                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(0, 'Cajón 3')}{renderCajon(1, 'Cajón 4')}</div>
             </div>
+
+            {/* SECCIÓN CAMBIOS BATERÍA */}
+            <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginTop: '20px' }}>
+                <h4 style={{ color: '#60a5fa', marginBottom: '10px' }}>¿Hubo cambio de baterías?</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                    {[1, 3, 2, 4].map(num => (
+                        <label key={num} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={cambiosRealizados[`cajon${num}`]} onChange={(e) => setCambiosRealizados({...cambiosRealizados, [`cajon${num}`]: e.target.checked})} />
+                            Cajón {num}
+                        </label>
+                    ))}
+                </div>
+                <input style={{ width: '100%', padding: '10px', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563', borderRadius: '5px' }} placeholder="Detalle (ej: bat. 3, 7 y 12)" value={cambiosRealizados.observaciones} onChange={(e) => setCambiosRealizados({...cambiosRealizados, observaciones: e.target.value})} />
+            </div>
+
             <button onClick={enviarReporte} style={{ marginTop: '20px', width: '100%', padding: '15px', backgroundColor: '#3b82f6', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '5px', cursor: 'pointer' }}>ENVIAR REPORTE</button>
         </div>
     );

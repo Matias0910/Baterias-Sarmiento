@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 export default function PlanillaPDF({ reporte }) {
-    if (!reporte) return <p>Cargando...</p>;
+    if (!reporte) return null;
 
     const generarPDF = () => {
         const doc = new jsPDF();
@@ -25,27 +25,30 @@ export default function PlanillaPDF({ reporte }) {
             });
             startY = doc.lastAutoTable.finalY + 10;
         });
-
         doc.save(`Reporte_${reporte.equipoId}.pdf`);
     };
 
-    // Función para abrir WhatsApp
     const enviarPorWhatsApp = () => {
         const mensaje = encodeURIComponent(`Hola, envío el informe de mantenimiento del coche ${reporte.equipoId} con fecha ${new Date(reporte.fecha).toLocaleDateString()}.`);
         window.open(`https://wa.me/?text=${mensaje}`, '_blank');
     };
 
     return (
-        <div style={{ marginTop: '20px', padding: '20px', border: '1px solid #60a5fa', borderRadius: '10px' }}>
-            <h4 style={{ color: '#60a5fa' }}>Acciones del Reporte</h4>
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={generarPDF} style={{ padding: '10px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-                    📥 Descargar PDF
-                </button>
-                <button onClick={enviarPorWhatsApp} style={{ padding: '10px', backgroundColor: '#25d366', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-                    💬 Enviar por WhatsApp
-                </button>
-            </div>
+        <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
+            <button 
+                onClick={generarPDF} 
+                title="Descargar PDF"
+                style={{ padding: '5px 8px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+            >
+                📄 PDF
+            </button>
+            <button 
+                onClick={enviarPorWhatsApp} 
+                title="Enviar por WhatsApp"
+                style={{ padding: '5px 8px', backgroundColor: '#25d366', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+            >
+                💬 WA
+            </button>
         </div>
     );
 }

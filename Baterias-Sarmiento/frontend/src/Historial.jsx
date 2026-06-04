@@ -3,34 +3,52 @@ import PlanillaPDF from './PlanillaPDF';
 
 export default function Historial() {
     const [reportes, setReportes] = useState([]);
-    const [reporteSeleccionado, setReporteSeleccionado] = useState(null);
 
+    // Traemos los datos de tu API
     useEffect(() => {
-        // Traemos los datos de tu backend
-        fetch('https://baterias-sarmiento-backend.onrender.com/api/reportes')
-            .then(res => res.json())
-            .then(data => setReportes(data))
-            .catch(err => console.error("Error al cargar historial", err));
+        const fetchReportes = async () => {
+            try {
+                const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/reportes');
+                const data = await response.json();
+                setReportes(data);
+            } catch (error) {
+                console.error("Error al traer reportes:", error);
+            }
+        };
+        fetchReportes();
     }, []);
 
     return (
-        <div style={{ color: 'white', padding: '20px' }}>
-            <h2>Historial de Reportes</h2>
-            <div style={{ display: 'grid', gap: '10px' }}>
-                {reportes.map((rep) => (
-                    <div key={rep._id} style={{ border: '1px solid #4b5563', padding: '10px', borderRadius: '5px' }}>
-                        <p>Equipo: {rep.equipoId} - Fecha: {new Date(rep.fecha).toLocaleDateString()}</p>
-                        <button onClick={() => setReporteSeleccionado(rep)}>Ver Planilla</button>
-                    </div>
-                ))}
+        <div style={{ padding: '20px', backgroundColor: '#1f2937', borderRadius: '10px', marginTop: '20px' }}>
+            <h2 style={{ color: '#60a5fa', textAlign: 'center' }}>Registros Históricos</h2>
+            
+            <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', color: 'white', borderCollapse: 'collapse', marginTop: '15px' }}>
+                    <thead>
+                        <tr style={{ backgroundColor: '#374151' }}>
+                            <th style={{ padding: '10px' }}>Fecha</th>
+                            <th style={{ padding: '10px' }}>Equipo</th>
+                            <th style={{ padding: '10px' }}>Tipo</th>
+                            <th style={{ padding: '10px' }}>Frecuencia</th>
+                            <th style={{ padding: '10px' }}>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {reportes.map((rep, idx) => (
+                            <tr key={idx} style={{ borderBottom: '1px solid #4b5563' }}>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>{new Date(rep.fecha).toLocaleDateString()}</td>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>{rep.equipoId}</td>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>{rep.tipo}</td>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>{rep.frecuencia}</td>
+                                <td style={{ padding: '10px', textAlign: 'center' }}>
+                                    {/* Aquí activas tu PlanillaPDF pasando el reporte específico */}
+                                    <PlanillaPDF reporte={rep} />
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
-
-            {reporteSeleccionado && (
-                <div style={{ marginTop: '30px' }}>
-                    <button onClick={() => setReporteSeleccionado(null)}>Cerrar Planilla</button>
-                    <PlanillaPDF reporte={reporteSeleccionado} />
-                </div>
-            )}
         </div>
     );
 }

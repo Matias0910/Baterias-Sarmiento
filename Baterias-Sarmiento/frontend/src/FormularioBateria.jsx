@@ -14,7 +14,8 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     const resetData = () => ({
         v: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
-        r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')]
+        r: [Array(getVasos(0)).fill(''), Array(getVasos(1)).fill(''), Array(getVasos(2)).fill(''), Array(getVasos(3)).fill('')],
+        totR: ['', '', '', ''] // Volvimos a agregar el campo para guardar manual
     });
 
     const [data, setData] = useState(resetData);
@@ -83,6 +84,11 @@ export default function FormularioBateria({ tipo, equipoId }) {
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: '#e11d48', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
                 <p style={{ marginTop: '5px', color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
+                
+                {/* ESTO SOLO APARECE SI ES BIMESTRAL */}
+                {esGrande && frecuencia === 'bimestral' && (
+                    <input style={{ padding: '5px', marginTop: '10px', width: '90%', backgroundColor: '#111827', color: '#34d399', border: '1px solid #34d399', fontWeight: 'bold' }} placeholder="Resistencia Total Manual" value={data.totR[idx]} onChange={(e) => { const nd = {...data}; nd.totR[idx] = e.target.value; setData(nd); }} />
+                )}
             </div>
         );
     };

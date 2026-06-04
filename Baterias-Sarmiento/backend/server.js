@@ -35,5 +35,15 @@ app.post('/api/guardar', async (req, res) => {
     }
 });
 
+// Ruta para obtener el historial
+app.get('/api/reportes', async (req, res) => {
+    try {
+        const reportes = await Reporte.find().sort({ fecha: -1 }); // Trae los últimos primero
+        res.status(200).json(reportes);
+    } catch (error) {
+        res.status(500).json({ mensaje: "Error al obtener historial: " + error.message });
+    }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

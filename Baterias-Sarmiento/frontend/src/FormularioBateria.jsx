@@ -34,16 +34,15 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     const enviarReporte = async () => {
         const reporte = { 
-        equipoId, 
-        tipo, 
-        frecuencia, 
-        orientacion, 
-        tiempoApagado, 
-        // Si es china, guardamos el valor; si no, guardamos 0
-        bateriasChinas: tipo === 'china' ? bateriasChinas : 0, 
-        data, 
-        fecha: new Date().toISOString() 
-    };
+            equipoId, 
+            tipo, 
+            frecuencia, 
+            orientacion, 
+            tiempoApagado, 
+            bateriasChinas: tipo === 'china' ? bateriasChinas : 0,
+            data, 
+            fecha: new Date().toISOString() 
+        };
         try {
             const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
                 method: 'POST',
@@ -92,22 +91,15 @@ export default function FormularioBateria({ tipo, equipoId }) {
         );
     };
 
-   return (
+    return (
         <div style={{ backgroundColor: '#111827', padding: '20px', color: 'white', borderRadius: '15px', maxWidth: '900px', margin: '0 auto' }}>
             <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId}</h2>
-            
             {tipo === 'china' && (
                 <div style={{ marginBottom: '20px' }}>
                     <label>Cantidad de Baterías Chinas: </label>
-                    <input 
-                        type="number"
-                        value={bateriasChinas}
-                        onChange={(e) => setBateriasChinas(e.target.value)}
-                        style={{ width: '100%', padding: '10px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '5px' }}
-                    />
+                    <input type="number" value={bateriasChinas} onChange={(e) => setBateriasChinas(e.target.value)} style={{ width: '100%', padding: '10px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '5px' }} />
                 </div>
             )}
-
             {tipo === 'china' && (
                 <div style={{ marginBottom: '15px' }}>
                     <label>Punta con vasos grandes: </label>
@@ -138,3 +130,4 @@ export default function FormularioBateria({ tipo, equipoId }) {
             <button onClick={enviarReporte} style={{ marginTop: '20px', width: '100%', padding: '15px', backgroundColor: '#3b82f6', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '5px', cursor: 'pointer' }}>ENVIAR REPORTE</button>
         </div>
     );
+}

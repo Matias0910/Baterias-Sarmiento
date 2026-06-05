@@ -109,7 +109,8 @@ doc.text(splitTexto, 20, currentY + 10);
             doc.text(notaRango, 20, doc.internal.pageSize.getHeight() - 10);
             doc.setTextColor(0); // Volver a negro
 
-            doc.save(`Reporte_${reporte.equipoId}.pdf`);
+            const blobUrl = doc.output('bloburl');
+            window.open(blobUrl, '_blank');
         } catch (error) {
             console.error("Error al generar PDF:", error);
             alert("Error al generar el PDF.");

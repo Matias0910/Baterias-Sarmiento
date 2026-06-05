@@ -88,7 +88,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                         {vArray.map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(v, 'v', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
                     </div>
                 ) : (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(vArray[0] || '', 'v', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
                 <p style={{ color: '#60a5fa' }}>Total: <strong>{totalV} V</strong></p>
                 <p>Resistencia (mΩ):</p>
@@ -97,7 +97,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                         {rArray.map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(r, 'r', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
                     </div>
                 ) : (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(rArray[0] || '', 'r', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
                 <p style={{ color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
             </div>

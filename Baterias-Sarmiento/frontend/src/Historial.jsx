@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PlanillaPDF from './PlanillaPDF';
 
-export default function Historial({ equipoId }) { // <--- Recibimos equipoId acá
+export default function Historial({ equipoId, isGlobalView }) { 
     const [reportes, setReportes] = useState([]);
 
    // En Historial.jsx
@@ -11,9 +11,12 @@ useEffect(() => {
             const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/reportes');
             const data = await response.json();
             
-            // Comparamos convirtiendo ambos a Number. 
-            // Number("02") es 2 y Number(2) es 2. ¡Coinciden!
-            const filtrados = data.filter(r => Number(r.equipoId) === Number(equipoId));
+            let filtrados = data;
+            
+            if (!isGlobalView) {
+                // Si no es vista global, filtramos por el equipo seleccionado
+                filtrados = data.filter(r => Number(r.equipoId) === Number(equipoId));
+            }
             
             setReportes(filtrados);
         } catch (error) {
@@ -21,7 +24,7 @@ useEffect(() => {
         }
     };
     fetchReportes();
-}, [equipoId]);
+}, [equipoId, isGlobalView]);
 
     return (
         <div style={{ padding: '20px', backgroundColor: '#1f2937', borderRadius: '10px', marginTop: '20px' }}>

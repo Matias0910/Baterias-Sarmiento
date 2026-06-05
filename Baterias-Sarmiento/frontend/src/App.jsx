@@ -5,6 +5,7 @@ import Historial from './Historial';
 export default function App() {
   const [config, setConfig] = useState({ equipoId: '02', tipo: 'china' });
   const [iniciado, setIniciado] = useState(false);
+  const [verGlobal, setVerGlobal] = useState(false);
 
   return (
     <div style={{ backgroundColor: '#111827', minHeight: '100vh', padding: '20px', color: 'white', fontFamily: 'sans-serif' }}>
@@ -38,7 +39,15 @@ export default function App() {
           
           <div style={{ marginTop: '50px', borderTop: '4px solid #374151', paddingTop: '30px' }}>
             <h2 style={{ textAlign: 'center' }}>Historial y Reportes</h2>
-            <Historial equipoId={config.equipoId} />
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <button 
+                    onClick={() => setVerGlobal(!verGlobal)}
+                    style={{ padding: '10px 20px', backgroundColor: verGlobal ? '#10b981' : '#6b7280', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                    {verGlobal ? "← Ver solo Equipo " + config.equipoId : "Ver Historial de TODOS los Equipos"}
+                </button>
+            </div>
+            <Historial equipoId={config.equipoId} isGlobalView={verGlobal} />
           </div>
         </>
       )}

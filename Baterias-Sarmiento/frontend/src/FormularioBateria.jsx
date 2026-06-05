@@ -4,7 +4,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const [orientacion, setOrientacion] = useState(localStorage.getItem('orientacion') || 'moreno');
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
     const [tiempoApagado, setTiempoApagado] = useState({ moreno: '', once: '' });
-    const [bateriasChinas, setBateriasChinas] = useState('');
     // Estado para los cambios de batería
     const [cambiosRealizados, setCambiosRealizados] = useState({
         cajon1: false, cajon2: false, cajon3: false, cajon4: false,
@@ -55,8 +54,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     const enviarReporte = async () => {
         const reporte = { 
-            equipoId, tipo, frecuencia, orientacion, tiempoApagado, 
-            bateriasChinas: frecuencia === 'quincenal' ? 0 : bateriasChinas,
+            equipoId, tipo, frecuencia, orientacion, tiempoApagado,
             cambiosRealizados: { observaciones: cambiosRealizados.observaciones },
             data, 
             fecha: new Date().toISOString() 
@@ -91,7 +89,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
                 <p style={{ color: '#60a5fa' }}>Total: <strong>{totalV} V</strong></p>
-                <p>Resistencia (mΩ):</p>
+                <p>Resistencia (R):</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
                         {rArray.map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(r, 'r', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
@@ -99,7 +97,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 ) : (
                     <input style={{ padding: '5px', width: '90%', backgroundColor: '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
-                <p style={{ color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
+                <p style={{ color: '#e11d48' }}>Total: <strong>{totalR} R</strong></p>
             </div>
         );
     };
@@ -107,12 +105,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
     return (
         <div style={{ backgroundColor: '#111827', padding: '20px', color: 'white', borderRadius: '15px', maxWidth: '900px', margin: '0 auto' }}>
             <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId}</h2>
-            {tipo === 'china' && (
-                <div style={{ marginBottom: '20px' }}>
-                    <label>Cantidad de Baterías Chinas: </label>
-                    <input type="number" value={frecuencia === 'quincenal' ? '0' : bateriasChinas} disabled={frecuencia === 'quincenal'} onChange={(e) => setBateriasChinas(e.target.value)} style={{ width: '100%', padding: '10px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '5px' }} />
-                </div>
-            )}
             <div style={{ marginBottom: '15px' }}>
                 <label>Punta con vasos grandes: </label>
                 <select value={orientacion} onChange={(e) => setOrientacion(e.target.value)} style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}>
@@ -120,9 +112,9 @@ export default function FormularioBateria({ tipo, equipoId }) {
                     <option value="once">Once</option>
                 </select>
             </div>
-            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <div style={{ flex: 1 }}><label>Tiempo Apagado Once: </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.once} onChange={(e) => setTiempoApagado({...tiempoApagado, once: e.target.value})} /></div>
-                <div style={{ flex: 1 }}><label>Tiempo Apagado Moreno: </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.moreno} onChange={(e) => setTiempoApagado({...tiempoApagado, moreno: e.target.value})} /></div>
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}> {/* Agregamos "(minutos)" a las etiquetas */}
+                <div style={{ flex: 1 }}><label>Tiempo Apagado Once (minutos): </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.once} onChange={(e) => setTiempoApagado({...tiempoApagado, once: e.target.value})} /></div>
+                <div style={{ flex: 1 }}><label>Tiempo Apagado Moreno (minutos): </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.moreno} onChange={(e) => setTiempoApagado({...tiempoApagado, moreno: e.target.value})} /></div>
             </div>
             <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', backgroundColor: '#374151', color: 'white' }}>
                 <option value="quincenal">Quincenal</option>
@@ -132,7 +124,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
             {/* PUNTAS INVERTIDAS: ONCE IZQUIERDA, MORENO DERECHA */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Once</h3>{renderCajon(0, 'Cajón 1')}{renderCajon(1, 'Cajón 2')}</div>
-                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(2, 'Cajón 3')}{renderCajon(3, 'Cajón 4')}</div>
+                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(2, 'Cajón 1')}{renderCajon(3, 'Cajón 2')}</div>
             </div>
 
             {/* SECCIÓN CAMBIOS BATERÍA */}

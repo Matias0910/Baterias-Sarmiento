@@ -40,7 +40,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
         const reporte = { 
             equipoId, tipo, frecuencia, orientacion, tiempoApagado, 
             bateriasChinas: frecuencia === 'quincenal' ? 0 : bateriasChinas,
-            cambiosRealizados, // Aquí se envía el estado de los checkboxes
+            cambiosRealizados: { observaciones: cambiosRealizados.observaciones },
             data, 
             fecha: new Date().toISOString() 
         };
@@ -119,18 +119,15 @@ export default function FormularioBateria({ tipo, equipoId }) {
             </div>
 
             {/* SECCIÓN CAMBIOS BATERÍA */}
-            <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginTop: '20px' }}>
-                <h4 style={{ color: '#60a5fa', marginBottom: '10px' }}>¿Hubo cambio de baterías?</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                    {[1, 3, 2, 4].map(num => (
-                        <label key={num} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={cambiosRealizados[`cajon${num}`]} onChange={(e) => setCambiosRealizados({...cambiosRealizados, [`cajon${num}`]: e.target.checked})} />
-                            Cajón {num}
-                        </label>
-                    ))}
-                </div>
-                <input style={{ width: '100%', padding: '10px', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563', borderRadius: '5px' }} placeholder="Detalle (ej: bat. 3, 7 y 12)" value={cambiosRealizados.observaciones} onChange={(e) => setCambiosRealizados({...cambiosRealizados, observaciones: e.target.value})} />
-            </div>
+<div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginTop: '20px' }}>
+    <h4 style={{ color: '#60a5fa', marginBottom: '10px' }}>CAMBIO DE BATERIAS</h4>
+    <textarea 
+        style={{ width: '100%', padding: '10px', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563', borderRadius: '5px', minHeight: '80px' }} 
+        placeholder="Escribí aquí qué baterías se cambiaron..." 
+        value={cambiosRealizados.observaciones} 
+        onChange={(e) => setCambiosRealizados({ ...cambiosRealizados, observaciones: e.target.value })} 
+    />
+</div>
 
             <button onClick={enviarReporte} style={{ marginTop: '20px', width: '100%', padding: '15px', backgroundColor: '#3b82f6', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '5px', cursor: 'pointer' }}>ENVIAR REPORTE</button>
         </div>

@@ -25,6 +25,7 @@ const Reporte = mongoose.model('Reporte', new mongoose.Schema({
     orientacion: String,
     tiempoApagado: { moreno: String, once: String },
     bateriasChinas: Number, // Agregamos este campo para guardar la cantidad
+    cambiosRealizados: { observaciones: String },
     data: Object,
     fecha: { 
         type: Date, 

@@ -38,7 +38,7 @@ export default function App() {
           
           <div style={{ marginTop: '50px', borderTop: '4px solid #374151', paddingTop: '30px' }}>
             <h2 style={{ textAlign: 'center' }}>Historial y Reportes</h2>
-            <Historial />
+            <Historial equipoId={config.equipoId} />
           </div>
         </>
       )}

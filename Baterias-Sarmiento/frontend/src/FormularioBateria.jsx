@@ -13,7 +13,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     const getVasos = (idx) => {
         if (tipo !== 'china') return 4;
-        const esPuntaGrande = orientacion === 'moreno' ? (idx < 2) : (idx >= 2);
+        const esPuntaGrande = orientacion === 'moreno' ? (idx >= 2) : (idx < 2);
         return esPuntaGrande ? 25 : 4;
     };
 
@@ -58,9 +58,9 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const renderCajon = (idx, label) => {
         const vArray = data.v[idx];
         const rArray = data.r[idx];
-        const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0).toFixed(2);
+        const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val?.toString().replace(',', '.')) || 0), 0).toFixed(2).replace('.', ',');
         let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-        const totalR = (tipo === 'china' && getVasos(idx) === 25 && frecuencia === 'bimestral' ? (rawSum / 2) : rawSum).toFixed(2);
+        const totalR = (tipo === 'china' && getVasos(idx) === 25 && frecuencia === 'bimestral' ? (rawSum / 2) : rawSum).toFixed(2).replace('.', ',');
 
         return (
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
@@ -114,8 +114,8 @@ export default function FormularioBateria({ tipo, equipoId }) {
             
             {/* PUNTAS INVERTIDAS: ONCE IZQUIERDA, MORENO DERECHA */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Once</h3>{renderCajon(2, 'Cajón 1')}{renderCajon(3, 'Cajón 2')}</div>
-                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(0, 'Cajón 3')}{renderCajon(1, 'Cajón 4')}</div>
+                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Once</h3>{renderCajon(0, 'Cajón 1')}{renderCajon(1, 'Cajón 2')}</div>
+                <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(2, 'Cajón 3')}{renderCajon(3, 'Cajón 4')}</div>
             </div>
 
             {/* SECCIÓN CAMBIOS BATERÍA */}

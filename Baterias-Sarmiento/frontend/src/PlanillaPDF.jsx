@@ -16,24 +16,27 @@ export default function PlanillaPDF({ reporte }) {
             doc.text("INFORME DE MANTENIMIENTO BATERIAS", 20, 15);
             doc.setFontSize(10);
             doc.text(`Equipo: ${reporte.equipoId} | Fecha: ${new Date(reporte.fecha).toLocaleDateString()}`, 20, 22);
-            doc.text(`Tipo: ${esChina ? 'Batería CHINA' : 'Batería ESTÁNDAR'}`, 20, 27);
+            doc.text(`Tipo: ${esChina ? 'Batería CHINA/ESTANDAR' : 'Batería ESTÁNDAR'}`, 20, 27);
 
             let currentY = 40;
 
             if (reporte.data?.v) {
                 reporte.data.v.forEach((voltajes, idx) => {
-                    const totalV = voltajes.reduce((acc, v) => acc + (parseFloat(v) || 0), 0);
+                    const totalV = voltajes.reduce((acc, v) => acc + (parseFloat(v?.toString().replace(',', '.')) || 0), 0);
                     const resistencias = reporte.data.r ? reporte.data.r[idx] : [];
-                    const totalR = resistencias.reduce((acc, r) => acc + (parseFloat(r) || 0), 0);
+                    const totalR = resistencias.reduce((acc, r) => acc + (parseFloat(r?.toString().replace(',', '.')) || 0), 0);
+
+                    const formatNum = (num) => num.toFixed(2).replace('.', ',');
 
                     doc.setFontSize(12);
-                    doc.text(`Cajón ${idx + 1}`, 20, currentY);
+                    const labelPunta = idx < 2 ? "Punta ONCE" : "Punta MORENO";
+                    doc.text(`${labelPunta} - Cajón ${idx + 1}`, 20, currentY);
 
                     if (esQuincenal) {
                         autoTable(doc, {
                             startY: currentY + 2,
                             head: [['Concepto', 'Total Voltaje (V)', 'Total Resistencia (R)']],
-                            body: [['TOTALES', totalV.toFixed(2), totalR.toFixed(2)]],
+                            body: [['TOTALES', formatNum(totalV), formatNum(totalR)]],
                             theme: 'grid',
                             headStyles: { fillColor: colorTrenes }
                         });
@@ -41,13 +44,13 @@ export default function PlanillaPDF({ reporte }) {
                         if (esChina) {
                             const head = [['Vaso', ...voltajes.map((_, i) => i + 1), 'TOTAL']];
                             const body = [
-                                ['Voltaje (V)', ...voltajes, totalV.toFixed(2)],
-                                ['Resist. (R)', ...resistencias, totalR.toFixed(2)]
+                                ['Voltaje (V)', ...voltajes.map(v => v?.toString() || '0'), formatNum(totalV)],
+                                ['Resist. (R)', ...resistencias.map(r => r?.toString() || '0'), formatNum(totalR)]
                             ];
                             autoTable(doc, { startY: currentY + 2, head, body, theme: 'grid', headStyles: { fillColor: colorTrenes } });
                         } else {
-                            const body = voltajes.map((v, i) => [i + 1, v || '0', resistencias[i] || '0']);
-                            body.push([{ content: 'TOTAL', styles: { fontStyle: 'bold' } }, totalV.toFixed(2), totalR.toFixed(2)]);
+                            const body = voltajes.map((v, i) => [i + 1, v?.toString() || '0', resistencias[i]?.toString() || '0']);
+                            body.push([{ content: 'TOTAL', styles: { fontStyle: 'bold' } }, formatNum(totalV), formatNum(totalR)]);
                             autoTable(doc, { startY: currentY + 2, head: [['Vaso', 'Voltaje (V)', 'Resistencia (R)']], body, theme: 'grid', headStyles: { fillColor: colorTrenes } });
                         }
                     }

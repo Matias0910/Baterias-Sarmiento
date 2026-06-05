@@ -36,16 +36,18 @@ export default function FormularioBateria({ tipo, equipoId }) {
         });
     };
 
-    const obtenerAlerta = (valor, tipoDato) => {
+    const obtenerAlerta = (valor, tipoDato, idx) => {
         if (!valor) return false;
         const v = parseFloat(valor.toString().replace(',', '.'));
         if (isNaN(v)) return false;
 
-        if (tipo === 'china') {
-            if (tipoDato === 'v') return v < 1.9 || v > 2.4;
+        const esVasoChina = tipo === 'china' && getVasos(idx) === 25;
+
+        if (esVasoChina) {
+            if (tipoDato === 'v') return v < 2 || v > 2.4;
             if (tipoDato === 'r') return v > 2.2;
         } else {
-            if (tipoDato === 'v') return v < 1.9 || v > 2.4;
+            if (tipoDato === 'v') return v < 12 || v > 14;
             if (tipoDato === 'r') return v > 7.5;
         }
         return false;
@@ -83,19 +85,19 @@ export default function FormularioBateria({ tipo, equipoId }) {
                 <p>Voltaje:</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                        {vArray.map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(v, 'v') ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
+                        {vArray.map((v, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(v, 'v', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder={`V${i+1}`} value={v} onChange={(e) => updateValue('v', idx, i, e.target.value)} />)}
                     </div>
                 ) : (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(vArray[0] || '', 'v') ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(vArray[0] || '', 'v', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #4b5563' }} placeholder="Voltaje Total" value={vArray[0] || ''} onChange={(e) => updateValue('v', idx, 0, e.target.value)} />
                 )}
                 <p style={{ color: '#60a5fa' }}>Total: <strong>{totalV} V</strong></p>
                 <p>Resistencia (mΩ):</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
-                        {rArray.map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(r, 'r') ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
+                        {rArray.map((r, i) => <input key={i} style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(r, 'r', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder={`R${i+1}`} value={r} onChange={(e) => updateValue('r', idx, i, e.target.value)} />)}
                     </div>
                 ) : (
-                    <input style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(rArray[0] || '', 'r') ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
+                    <input style={{ padding: '5px', width: '90%', backgroundColor: obtenerAlerta(rArray[0] || '', 'r', idx) ? '#7f1d1d' : '#111827', color: 'white', border: '1px solid #e11d48' }} placeholder="Resistencia Total" value={rArray[0] || ''} onChange={(e) => updateValue('r', idx, 0, e.target.value)} />
                 )}
                 <p style={{ color: '#e11d48' }}>Total: <strong>{totalR} mΩ</strong></p>
             </div>

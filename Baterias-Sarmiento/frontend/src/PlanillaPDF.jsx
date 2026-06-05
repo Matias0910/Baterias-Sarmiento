@@ -70,8 +70,8 @@ doc.text(splitTexto, 20, currentY + 10);
             doc.setFontSize(9);
             doc.setTextColor(100);
             const notaRango = reporte.tipo === 'china' 
-                ? "Rangos aceptables (China): Voltaje [1.9V - 2.4V] | Resistencia máx: 2.2 mΩ"
-                : "Rangos aceptables (Estándar): Voltaje [11.4V - 14,4V] | Resistencia máx: 7.5 mΩ";
+                ? "Rangos: China (2.0V-2.4V, max 2.2mΩ) | Estándar (12.0V-14.0V, max 7.5mΩ)"
+                : "Rangos aceptables (Estándar): Voltaje [12.0V - 14.0V] | Resistencia máx: 7.5 mΩ";
             doc.text(notaRango, 20, doc.internal.pageSize.getHeight() - 10);
             doc.setTextColor(0); // Volver a negro
 

@@ -54,5 +54,19 @@ app.get('/api/reportes', async (req, res) => {
     }
 });
 
+// Ruta para eliminar un reporte por ID
+app.delete('/api/reportes/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const eliminado = await Reporte.findByIdAndDelete(id);
+        if (!eliminado) {
+            return res.status(404).json({ mensaje: "Reporte no encontrado" });
+        }
+        res.status(200).json({ mensaje: "Reporte eliminado correctamente" });
+    } catch (error) {
+        res.status(500).json({ mensaje: "Error al eliminar: " + error.message });
+    }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

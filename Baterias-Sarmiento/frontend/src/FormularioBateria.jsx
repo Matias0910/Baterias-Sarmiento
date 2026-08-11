@@ -4,9 +4,20 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const [orientacion, setOrientacion] = useState(localStorage.getItem('orientacion') || 'moreno');
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
     const [tiempoApagado, setTiempoApagado] = useState({ moreno: '', once: '' });
+    
+    // Estado para manejar fechas anteriores o personalizadas
+    const [fechaReporte, setFechaReporte] = useState(
+        new Date().toISOString().slice(0, 16)
+    );
+
+    // Estados para el Asistente
+    const [isListening, setIsListening] = useState(false);
+    const [transcript, setTranscript] = useState("");
+    const [textoManual, setTextoManual] = useState("");
+    const [cajonActivo, setCajonActivo] = useState(0); // 0: Once C1, 1: Once C2, 2: Moreno C1, 3: Moreno C2
+
     // Estado para los cambios de batería
     const [cambiosRealizados, setCambiosRealizados] = useState({
-        cajon1: false, cajon2: false, cajon3: false, cajon4: false,
         observaciones: ""
     });
 
@@ -35,29 +46,154 @@ export default function FormularioBateria({ tipo, equipoId }) {
         });
     };
 
+    // --- LÓGICA DEL ASISTENTE ---
+    const iniciarEscucha = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("⚠️ Tu navegador no soporta reconocimiento de voz. Usá Google Chrome.");
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-AR';
+        recognition.continuous = false; 
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+            setIsListening(true);
+            setTranscript("Escuchando...");
+        };
+
+        recognition.onresult = (event) => {
+            const texto = event.results[0][0].transcript.toLowerCase().trim();
+            setTranscript(texto);
+            interpretarComando(texto);
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Error de voz:", event.error);
+            setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+        };
+
+        recognition.start();
+    };
+
+    const interpretarComando = (texto) => {
+        console.log("Comando procesado:", texto);
+        setTranscript(`Procesado: "${texto}"`);
+
+        // 1. Detectar Punta y Cajón combinados
+        if (texto.includes('once cajón 1') || texto.includes('once cajon 1')) {
+            setCajonActivo(0);
+            return;
+        }
+        if (texto.includes('once cajón 2') || texto.includes('once cajon 2')) {
+            setCajonActivo(1);
+            return;
+        }
+        if (texto.includes('moreno cajón 1') || texto.includes('moreno cajon 1')) {
+            setCajonActivo(2);
+            return;
+        }
+        if (texto.includes('moreno cajón 2') || texto.includes('moreno cajon 2')) {
+            setCajonActivo(3);
+            return;
+        }
+
+        const partes = texto.split(' ');
+        const todosLosNumeros = partes.filter(p => /\d+[\.,]?\d*/.test(p));
+
+        if (todosLosNumeros.length === 0) return;
+
+        // 2. Si estás en modo quincenal (totales)
+        if (frecuencia === 'quincenal') {
+            const valVoltaje = todosLosNumeros[0]?.replace(',', '.');
+            const valResistencia = todosLosNumeros[1]?.replace(',', '.');
+
+            setData(prevData => {
+                const newData = { ...prevData };
+                if (valVoltaje) newData.v[cajonActivo][0] = valVoltaje;
+                if (valResistencia) newData.r[cajonActivo][0] = valResistencia;
+                return newData;
+            });
+            return;
+        }
+
+        // 3. Si estás en modo bimestral (por vasos)
+        let indexVasoWord = partes.indexOf('vaso');
+        let numVaso = 0;
+        let valVoltaje = "";
+        let valResistencia = "";
+
+        if (indexVasoWord !== -1 && partes[indexVasoWord + 1]) {
+            numVaso = parseInt(partes[indexVasoWord + 1]) - 1;
+            const numerosRestantes = partes.slice(indexVasoWord + 2).filter(p => /\d+[\.,]?\d*/.test(p));
+            
+            if (numerosRestantes.length >= 2) {
+                valVoltaje = numerosRestantes[0].replace(',', '.');
+                valResistencia = numerosRestantes[1].replace(',', '.');
+            }
+        } else if (todosLosNumeros.length >= 3) {
+            numVaso = parseInt(todosLosNumeros[0]) - 1;
+            valVoltaje = todosLosNumeros[1].replace(',', '.');
+            valResistencia = todosLosNumeros[2].replace(',', '.');
+        }
+
+        if (valVoltaje && valResistencia && !isNaN(numVaso)) {
+            setData(prevData => {
+                const newData = { ...prevData };
+                if (newData.v[cajonActivo] && newData.v[cajonActivo][numVaso] !== undefined) {
+                    newData.v[cajonActivo][numVaso] = valVoltaje;
+                }
+                if (newData.r[cajonActivo] && newData.r[cajonActivo][numVaso] !== undefined) {
+                    newData.r[cajonActivo][numVaso] = valResistencia;
+                }
+                return newData;
+            });
+        }
+    };
+    // ----------------------------------------
+
     const obtenerAlerta = (valor, tipoDato, idx) => {
         if (!valor) return false;
-        const v = parseFloat(valor.toString().replace(',', '.'));
+        
+        // Limpiamos puntos o comas sobrantes al final del string (ej: "13.45.")
+        let valorLimpio = valor.toString().trim();
+        if (valorLimpio.endsWith('.') || valorLimpio.endsWith(',')) {
+            valorLimpio = valorLimpio.slice(0, -1);
+        }
+
+        const v = parseFloat(valorLimpio.replace(',', '.'));
         if (isNaN(v)) return false;
 
         const esVasoChina = tipo === 'china' && getVasos(idx) === 25;
 
-        if (esVasoChina) {
-            if (tipoDato === 'v') return v < 2 || v > 2.4;
-            if (tipoDato === 'r') return v > 2.2;
-        } else {
-            if (tipoDato === 'v') return v < 12 || v > 14;
-            if (tipoDato === 'r') return v > 7.5;
+        // Si NO es la china de 25 vasos (es estándar), no aplicamos la alerta estricta de vaso individual
+        if (!esVasoChina) {
+            return false; 
         }
+
+        // Validaciones exclusivas para baterías chinas de 25 vasos:
+        if (tipoDato === 'v') return v < 1.9 || v > 2.4;
+        if (tipoDato === 'r') return v > 2.2;
+
         return false;
     };
 
     const enviarReporte = async () => {
         const reporte = { 
-            equipoId, tipo, frecuencia, orientacion, tiempoApagado,
+            equipoId, 
+            tipo, 
+            frecuencia, 
+            orientacion, 
+            tiempoApagado,
             cambiosRealizados: { observaciones: cambiosRealizados.observaciones },
             data, 
-            fecha: new Date().toISOString() 
+            fecha: new Date(fechaReporte).toISOString() 
         };
         try {
             const response = await fetch('https://baterias-sarmiento-backend.onrender.com/api/guardar', {
@@ -77,9 +213,13 @@ export default function FormularioBateria({ tipo, equipoId }) {
         let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
         const totalR = (tipo === 'china' && getVasos(idx) === 25 && frecuencia === 'bimestral' ? (rawSum / 2) : rawSum).toFixed(2).replace('.', ',');
 
+        const esActivo = cajonActivo === idx;
+
         return (
-            <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
-                <h4 style={{ margin: '0 0 10px 0' }}>{label} ({getVasos(idx)} vasos)</h4>
+            <div style={{ backgroundColor: esActivo ? '#1e3a8a' : '#1f2937', border: esActivo ? '2px solid #60a5fa' : '1px solid transparent', padding: '15px', borderRadius: '10px', marginBottom: '15px', transition: 'all 0.3s ease' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: esActivo ? '#93c5fd' : 'white' }}>
+                    {label} ({getVasos(idx)} vasos) {esActivo && ' 👈 (ACTIVO)'}
+                </h4>
                 <p>Voltaje:</p>
                 {frecuencia === 'bimestral' ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px' }}>
@@ -105,6 +245,20 @@ export default function FormularioBateria({ tipo, equipoId }) {
     return (
         <div style={{ backgroundColor: '#111827', padding: '20px', color: 'white', borderRadius: '15px', maxWidth: '900px', margin: '0 auto' }}>
             <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId}</h2>
+            
+            {/* Selector de Fecha para registros pasados */}
+            <div style={{ backgroundColor: '#1f2937', padding: '12px', borderRadius: '10px', marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#60a5fa' }}>
+                    📅 Fecha y Hora del Mantenimiento:
+                </label>
+                <input 
+                    type="datetime-local" 
+                    value={fechaReporte} 
+                    onChange={(e) => setFechaReporte(e.target.value)}
+                    style={{ width: '100%', padding: '8px', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563', borderRadius: '5px' }}
+                />
+            </div>
+
             <div style={{ marginBottom: '15px' }}>
                 <label>Punta con vasos grandes: </label>
                 <select value={orientacion} onChange={(e) => setOrientacion(e.target.value)} style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}>
@@ -112,31 +266,118 @@ export default function FormularioBateria({ tipo, equipoId }) {
                     <option value="once">Once</option>
                 </select>
             </div>
-            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}> {/* Agregamos "(minutos)" a las etiquetas */}
+            
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
                 <div style={{ flex: 1 }}><label>Tiempo Apagado Once (minutos): </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.once} onChange={(e) => setTiempoApagado({...tiempoApagado, once: e.target.value})} /></div>
                 <div style={{ flex: 1 }}><label>Tiempo Apagado Moreno (minutos): </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.moreno} onChange={(e) => setTiempoApagado({...tiempoApagado, moreno: e.target.value})} /></div>
             </div>
+            
             <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', backgroundColor: '#374151', color: 'white' }}>
                 <option value="quincenal">Quincenal</option>
                 <option value="bimestral">Bimestral</option>
             </select>
+
+            {/* PANEL DE ASISTENTE CON SELECTOR MANUAL DE CAJONES, VOZ Y TEXTO */}
+            <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #3b82f6', textAlign: 'center' }}>
+                <h4 style={{ color: '#60a5fa', margin: '0 0 10px 0' }}>🤖 Panel de Control y Asistente</h4>
+                
+                {/* SELECTOR MANUAL DE CAJONES (BOTONES TÁCTILES) */}
+                <div style={{ marginBottom: '15px' }}>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '8px' }}>Seleccioná el cajón activo tocando los botones:</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxWidth: '400px', margin: '0 auto' }}>
+                        <button 
+                            onClick={() => setCajonActivo(0)} 
+                            style={{ padding: '8px', backgroundColor: cajonActivo === 0 ? '#2563eb' : '#374151', color: 'white', border: cajonActivo === 0 ? '2px solid #93c5fd' : '1px solid #4b5563', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                            ⚡ Once - Cajón 1
+                        </button>
+                        <button 
+                            onClick={() => setCajonActivo(1)} 
+                            style={{ padding: '8px', backgroundColor: cajonActivo === 1 ? '#2563eb' : '#374151', color: 'white', border: cajonActivo === 1 ? '2px solid #93c5fd' : '1px solid #4b5563', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                            ⚡ Once - Cajón 2
+                        </button>
+                        <button 
+                            onClick={() => setCajonActivo(2)} 
+                            style={{ padding: '8px', backgroundColor: cajonActivo === 2 ? '#2563eb' : '#374151', color: 'white', border: cajonActivo === 2 ? '2px solid #93c5fd' : '1px solid #4b5563', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                            🔋 Moreno - Cajón 1
+                        </button>
+                        <button 
+                            onClick={() => setCajonActivo(3)} 
+                            style={{ padding: '8px', backgroundColor: cajonActivo === 3 ? '#2563eb' : '#374151', color: 'white', border: cajonActivo === 3 ? '2px solid #93c5fd' : '1px solid #4b5563', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                            🔋 Moreno - Cajón 2
+                        </button>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                    <button 
+                        onClick={iniciarEscucha} 
+                        style={{ 
+                            padding: '10px 20px', 
+                            backgroundColor: isListening ? '#ef4444' : '#10b981', 
+                            color: 'white', 
+                            border: 'none', 
+                            borderRadius: '50px', 
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '14px'
+                        }}
+                    >
+                        {isListening ? "🎙️ Escuchando... (Hable ahora)" : "🎤 Activar Micrófono"}
+                    </button>
+                </div>
+
+                {/* Input de texto alternativo */}
+                <div style={{ display: 'flex', gap: '8px', maxWidth: '450px', margin: '0 auto' }}>
+                    <input 
+                        type="text" 
+                        placeholder="O escribí el comando acá (ej: Vaso 5, 2.15, 1.5)..." 
+                        value={textoManual}
+                        onChange={(e) => setTextoManual(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && textoManual.trim()) {
+                                interpretarComando(textoManual.toLowerCase().trim());
+                                setTextoManual("");
+                            }
+                        }}
+                        style={{ flex: 1, padding: '8px', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563', borderRadius: '5px' }}
+                    />
+                    <button 
+                        onClick={() => {
+                            if (textoManual.trim()) {
+                                interpretarComando(textoManual.toLowerCase().trim());
+                                setTextoManual("");
+                            }
+                        }}
+                        style={{ padding: '8px 15px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                        Enviar
+                    </button>
+                </div>
+
+                {transcript && <div style={{ marginTop: '8px', fontSize: '12px', color: '#e5e7eb', fontStyle: 'italic' }}>{transcript}</div>}
+            </div>
             
-            {/* PUNTAS INVERTIDAS: ONCE IZQUIERDA, MORENO DERECHA */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Once</h3>{renderCajon(0, 'Cajón 1')}{renderCajon(1, 'Cajón 2')}</div>
                 <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(2, 'Cajón 1')}{renderCajon(3, 'Cajón 2')}</div>
             </div>
 
-            {/* SECCIÓN CAMBIOS BATERÍA */}
-<div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginTop: '20px' }}>
-    <h4 style={{ color: '#60a5fa', marginBottom: '10px' }}>CAMBIO DE BATERIAS</h4>
-    <textarea 
-        style={{ width: '100%', padding: '10px', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563', borderRadius: '5px', minHeight: '80px' }} 
-        placeholder="Escribí aquí qué baterías se cambiaron..." 
-        value={cambiosRealizados.observaciones} 
-        onChange={(e) => setCambiosRealizados({ ...cambiosRealizados, observaciones: e.target.value })} 
-    />
-</div>
+            <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginTop: '20px' }}>
+                <h4 style={{ color: '#60a5fa', marginBottom: '5px' }}>REGISTRO DE CAMBIO DE BATERÍAS</h4>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '10px' }}>
+                    Indiqué qué baterías o cajones se cambiaron y sus nombres/identificadores.
+                </p>
+                <textarea 
+                    style={{ width: '100%', padding: '10px', backgroundColor: '#111827', color: 'white', border: '1px solid #4b5563', borderRadius: '5px', minHeight: '80px' }} 
+                    placeholder="Ej: Se cambió el vaso 12 del Cajón 1 de Once..." 
+                    value={cambiosRealizados.observaciones} 
+                    onChange={(e) => setCambiosRealizados({ ...cambiosRealizados, observaciones: e.target.value })} 
+                />
+            </div>
 
             <button onClick={enviarReporte} style={{ marginTop: '20px', width: '100%', padding: '15px', backgroundColor: '#3b82f6', border: 'none', color: 'white', fontWeight: 'bold', borderRadius: '5px', cursor: 'pointer' }}>ENVIAR REPORTE</button>
         </div>

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
 export default function FormularioBateria({ equipoId }) {
-    const [orientacion, setOrientacion] = useState(localStorage.getItem('orientacion_' + equipoId) || 'moreno');
+    const [orientacion, setOrientacion] = useState(() => {
+    const saved = localStorage.getItem('orientacion_' + equipoId);
+    return saved ? saved : 'moreno';
+    });
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia_' + equipoId) || 'quincenal');
     const [tiempoApagado, setTiempoApagado] = useState({ moreno: '', once: '' });
 
@@ -15,6 +18,10 @@ export default function FormularioBateria({ equipoId }) {
       // Acá también lo guardamos con el nombre único
       localStorage.setItem('marcasBaterias_' + equipoId, JSON.stringify(marcasBaterias));
     }, [marcasBaterias, equipoId]); // Agregamos equipoId acá
+
+    useEffect(() => {
+    localStorage.setItem('orientacion_' + equipoId, orientacion);
+    }, [orientacion, equipoId]);
     
     // Estado para manejar fechas anteriores o personalizadas
     const [fechaReporte, setFechaReporte] = useState(
@@ -305,10 +312,14 @@ export default function FormularioBateria({ equipoId }) {
 
             <div style={{ marginBottom: '15px' }}>
                 <label>Punta con vasos grandes (Solo aplica si hay baterías Chinas): </label>
-                <select value={orientacion} onChange={(e) => setOrientacion(e.target.value)} style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}>
-                    <option value="moreno">Moreno</option>
-                    <option value="once">Once</option>
-                </select>
+                <select 
+             value={orientacion} 
+             onChange={(e) => setOrientacion(e.target.value)} 
+             style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}
+             >
+             <option value="moreno">Moreno</option>
+             <option value="once">Once</option>
+             </select>
             </div>
             
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>

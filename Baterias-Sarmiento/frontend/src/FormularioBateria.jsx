@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 
-export default function FormularioBateria({ tipo, equipoId }) {
-    const [orientacion, setOrientacion] = useState(localStorage.getItem('orientacion') || 'moreno');
-    const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia') || 'quincenal');
+export default function FormularioBateria({ equipoId }) {
+    const [orientacion, setOrientacion] = useState(localStorage.getItem('orientacion_' + equipoId) || 'moreno');
+    const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia_' + equipoId) || 'quincenal');
     const [tiempoApagado, setTiempoApagado] = useState({ moreno: '', once: '' });
+
+    const [marcasBaterias, setMarcasBaterias] = useState(() => {
+      // Le agregamos el equipoId al nombre para que sea único por equipo
+      const saved = localStorage.getItem('marcasBaterias_' + equipoId);
+      return saved ? JSON.parse(saved) : { once: 'Hoppecke', moreno: 'Detroit' };
+    });
+
+  useEffect(() => {
+      // Acá también lo guardamos con el nombre único
+      localStorage.setItem('marcasBaterias_' + equipoId, JSON.stringify(marcasBaterias));
+    }, [marcasBaterias, equipoId]); // Agregamos equipoId acá
     
     // Estado para manejar fechas anteriores o personalizadas
     const [fechaReporte, setFechaReporte] = useState(
@@ -21,8 +32,15 @@ export default function FormularioBateria({ tipo, equipoId }) {
         observaciones: ""
     });
 
+    // Validamos por punta según la marca seleccionada de cada una
     const getVasos = (idx) => {
-        if (tipo !== 'china') return 4;
+        const esPuntaOnce = idx < 2;
+        const marcaPunta = esPuntaOnce ? marcasBaterias.once : marcasBaterias.moreno;
+        
+        // Si la marca de esa punta no es china (ej. Hoppecke, Vision, Detroit, Kaise), usa 4 vasos
+        if (marcaPunta !== 'Chinas') return 4;
+        
+        // Si es China, evaluamos cuál punta tiene los vasos grandes (25 vasos) según la orientación general
         const esPuntaGrande = orientacion === 'moreno' ? (idx >= 2) : (idx < 2);
         return esPuntaGrande ? 25 : 4;
     };
@@ -36,7 +54,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
     useEffect(() => {
         setData(resetData());
-    }, [orientacion, tipo, frecuencia]);
+    }, [orientacion, marcasBaterias, frecuencia]);
 
     const updateValue = (type, cajonIdx, valIdx, value) => {
         setData(prevData => {
@@ -86,7 +104,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
         console.log("Comando procesado:", texto);
         setTranscript(`Procesado: "${texto}"`);
 
-        // 1. Detectar Punta y Cajón combinados
         if (texto.includes('once cajón 1') || texto.includes('once cajon 1')) {
             setCajonActivo(0);
             return;
@@ -109,7 +126,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
 
         if (todosLosNumeros.length === 0) return;
 
-        // 2. Si estás en modo quincenal (totales)
         if (frecuencia === 'quincenal') {
             const valVoltaje = todosLosNumeros[0]?.replace(',', '.');
             const valResistencia = todosLosNumeros[1]?.replace(',', '.');
@@ -123,7 +139,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
             return;
         }
 
-        // 3. Si estás en modo bimestral (por vasos)
         let indexVasoWord = partes.indexOf('vaso');
         let numVaso = 0;
         let valVoltaje = "";
@@ -161,7 +176,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const obtenerAlerta = (valor, tipoDato, idx) => {
         if (!valor) return false;
         
-        // Limpiamos puntos o comas sobrantes al final del string (ej: "13.45.")
         let valorLimpio = valor.toString().trim();
         if (valorLimpio.endsWith('.') || valorLimpio.endsWith(',')) {
             valorLimpio = valorLimpio.slice(0, -1);
@@ -170,14 +184,12 @@ export default function FormularioBateria({ tipo, equipoId }) {
         const v = parseFloat(valorLimpio.replace(',', '.'));
         if (isNaN(v)) return false;
 
-        const esVasoChina = tipo === 'china' && getVasos(idx) === 25;
+        const esVasoChina = getVasos(idx) === 25;
 
-        // Si NO es la china de 25 vasos (es estándar), no aplicamos la alerta estricta de vaso individual
         if (!esVasoChina) {
             return false; 
         }
 
-        // Validaciones exclusivas para baterías chinas de 25 vasos:
         if (tipoDato === 'v') return v < 1.9 || v > 2.4;
         if (tipoDato === 'r') return v > 2.2;
 
@@ -187,7 +199,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
     const enviarReporte = async () => {
         const reporte = { 
             equipoId, 
-            tipo, 
+            marcasBaterias, // Enviamos las marcas fijas independientes de cada punta
             frecuencia, 
             orientacion, 
             tiempoApagado,
@@ -211,7 +223,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
         const rArray = data.r[idx];
         const totalV = vArray.reduce((acc, val) => acc + (parseFloat(val?.toString().replace(',', '.')) || 0), 0).toFixed(2).replace('.', ',');
         let rawSum = rArray.reduce((acc, val) => acc + (parseFloat(val.toString().replace(',', '.')) || 0), 0);
-        const totalR = (tipo === 'china' && getVasos(idx) === 25 && frecuencia === 'bimestral' ? (rawSum / 2) : rawSum).toFixed(2).replace('.', ',');
+        const totalR = (getVasos(idx) === 25 && frecuencia === 'bimestral' ? (rawSum / 2) : rawSum).toFixed(2).replace('.', ',');
 
         const esActivo = cajonActivo === idx;
 
@@ -246,6 +258,38 @@ export default function FormularioBateria({ tipo, equipoId }) {
         <div style={{ backgroundColor: '#111827', padding: '20px', color: 'white', borderRadius: '15px', maxWidth: '900px', margin: '0 auto' }}>
             <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId}</h2>
             
+            {/* SECCIÓN DE MARCAS FIJAS PARA CADA PUNTA A LA VISTA */}
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px' }}>
+                <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#60a5fa', fontWeight: 'bold' }}>Marca Punta Once:</label>
+                    <select 
+                        value={marcasBaterias.once} 
+                        onChange={(e) => setMarcasBaterias({ ...marcasBaterias, once: e.target.value })} 
+                        style={{ width: '100%', padding: '8px', backgroundColor: '#374151', color: 'white', borderRadius: '5px', border: '1px solid #4b5563' }}
+                    >
+                        <option value="Chinas">Chinas</option>
+                        <option value="Hoppecke">Hoppecke</option>
+                        <option value="Vision">Vision</option>
+                        <option value="Detroit">Detroit</option>
+                        <option value="Kaise">Kaise</option>
+                    </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#60a5fa', fontWeight: 'bold' }}>Marca Punta Moreno:</label>
+                    <select 
+                        value={marcasBaterias.moreno} 
+                        onChange={(e) => setMarcasBaterias({ ...marcasBaterias, moreno: e.target.value })} 
+                        style={{ width: '100%', padding: '8px', backgroundColor: '#374151', color: 'white', borderRadius: '5px', border: '1px solid #4b5563' }}
+                    >
+                        <option value="Chinas">Chinas</option>
+                        <option value="Hoppecke">Hoppecke</option>
+                        <option value="Vision">Vision</option>
+                        <option value="Detroit">Detroit</option>
+                        <option value="Kaise">Kaise</option>
+                    </select>
+                </div>
+            </div>
+            
             {/* Selector de Fecha para registros pasados */}
             <div style={{ backgroundColor: '#1f2937', padding: '12px', borderRadius: '10px', marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#60a5fa' }}>
@@ -260,7 +304,7 @@ export default function FormularioBateria({ tipo, equipoId }) {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
-                <label>Punta con vasos grandes: </label>
+                <label>Punta con vasos grandes (Solo aplica si hay baterías Chinas): </label>
                 <select value={orientacion} onChange={(e) => setOrientacion(e.target.value)} style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}>
                     <option value="moreno">Moreno</option>
                     <option value="once">Once</option>
@@ -281,7 +325,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
             <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #3b82f6', textAlign: 'center' }}>
                 <h4 style={{ color: '#60a5fa', margin: '0 0 10px 0' }}>🤖 Panel de Control y Asistente</h4>
                 
-                {/* SELECTOR MANUAL DE CAJONES (BOTONES TÁCTILES) */}
                 <div style={{ marginBottom: '15px' }}>
                     <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '8px' }}>Seleccioná el cajón activo tocando los botones:</p>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxWidth: '400px', margin: '0 auto' }}>
@@ -330,7 +373,6 @@ export default function FormularioBateria({ tipo, equipoId }) {
                     </button>
                 </div>
 
-                {/* Input de texto alternativo */}
                 <div style={{ display: 'flex', gap: '8px', maxWidth: '450px', margin: '0 auto' }}>
                     <input 
                         type="text" 

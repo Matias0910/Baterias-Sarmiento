@@ -17,19 +17,23 @@ mongoose.connect(process.env.MONGO_URI || "mongodb+srv://chamy241_db_user:Chamyc
 .then(() => console.log("✅ Conectado a SarmientoDB"))
 .catch(err => console.error("❌ Error de conexión:", err));
 
-// Definimos el modelo de datos
+// Definimos el modelo de datos actualizado con las marcas por punta
 const Reporte = mongoose.model('Reporte', new mongoose.Schema({
     equipoId: Number,
     tipo: String,
     frecuencia: String,
     orientacion: String,
     tiempoApagado: { moreno: String, once: String },
-    bateriasChinas: Number, // Agregamos este campo para guardar la cantidad
+    marcasBaterias: { // <--- Nuevo: Guardamos la marca fija de cada punta
+        once: String,
+        moreno: String
+    },
+    bateriasChinas: Number,
     cambiosRealizados: { observaciones: String },
     data: Object,
     fecha: { 
         type: Date, 
-        default: Date.now // Esto hace que si no envías fecha, se cree automáticamente
+        default: Date.now 
     }
 }));
 

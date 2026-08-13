@@ -2,26 +2,38 @@ import React, { useState, useEffect } from 'react';
 
 export default function FormularioBateria({ equipoId }) {
     const [orientacion, setOrientacion] = useState(() => {
-    const saved = localStorage.getItem('orientacion_' + equipoId);
-    return saved ? saved : 'moreno';
+        const saved = localStorage.getItem('orientacion_' + equipoId);
+        return saved ? saved : 'moreno';
     });
+    
     const [frecuencia, setFrecuencia] = useState(localStorage.getItem('frecuencia_' + equipoId) || 'quincenal');
-    const [tiempoApagado, setTiempoApagado] = useState({ moreno: '', once: '' });
+    
+    const [tiempoApagado, setTiempoApagado] = useState(() => {
+        const saved = localStorage.getItem('tiempoApagado_' + equipoId);
+        return saved ? JSON.parse(saved) : { moreno: '10', once: '10' };
+    });
 
     const [marcasBaterias, setMarcasBaterias] = useState(() => {
-      // Le agregamos el equipoId al nombre para que sea único por equipo
-      const saved = localStorage.getItem('marcasBaterias_' + equipoId);
-      return saved ? JSON.parse(saved) : { once: 'Hoppecke', moreno: 'Detroit' };
+        const saved = localStorage.getItem('marcasBaterias_' + equipoId);
+        return saved ? JSON.parse(saved) : { once: 'Hoppecke', moreno: 'Detroit' };
     });
 
-  useEffect(() => {
-      // Acá también lo guardamos con el nombre único
-      localStorage.setItem('marcasBaterias_' + equipoId, JSON.stringify(marcasBaterias));
-    }, [marcasBaterias, equipoId]); // Agregamos equipoId acá
+    useEffect(() => {
+        localStorage.setItem('marcasBaterias_' + equipoId, JSON.stringify(marcasBaterias));
+    }, [marcasBaterias, equipoId]);
 
     useEffect(() => {
-    localStorage.setItem('orientacion_' + equipoId, orientacion);
+        localStorage.setItem('orientacion_' + equipoId, orientacion);
     }, [orientacion, equipoId]);
+
+    // Función para guardar los tiempos de apagado solo cuando cambian
+    const handleTiempoApagadoChange = (punta, valor) => {
+        const nuevosTiempos = { ...tiempoApagado, [punta]: valor };
+        setTiempoApagado(nuevosTiempos);
+        localStorage.setItem('tiempoApagado_' + equipoId, JSON.stringify(tiempoApagado));
+    };
+
+    // ... (el resto de los useEffects se mantienen igual)
     
     // Estado para manejar fechas anteriores o personalizadas
     const [fechaReporte, setFechaReporte] = useState(
@@ -44,10 +56,8 @@ export default function FormularioBateria({ equipoId }) {
         const esPuntaOnce = idx < 2;
         const marcaPunta = esPuntaOnce ? marcasBaterias.once : marcasBaterias.moreno;
         
-        // Si la marca de esa punta no es china (ej. Hoppecke, Vision, Detroit, Kaise), usa 4 vasos
         if (marcaPunta !== 'Chinas') return 4;
         
-        // Si es China, evaluamos cuál punta tiene los vasos grandes (25 vasos) según la orientación general
         const esPuntaGrande = orientacion === 'moreno' ? (idx >= 2) : (idx < 2);
         return esPuntaGrande ? 25 : 4;
     };
@@ -178,7 +188,6 @@ export default function FormularioBateria({ equipoId }) {
             });
         }
     };
-    // ----------------------------------------
 
     const obtenerAlerta = (valor, tipoDato, idx) => {
         if (!valor) return false;
@@ -204,10 +213,12 @@ export default function FormularioBateria({ equipoId }) {
     };
 
     const enviarReporte = async () => {
+        const tipoBateria = (marcasBaterias.once === 'Chinas' || marcasBaterias.moreno === 'Chinas') ? 'china' : 'estandar';
         const reporte = { 
             equipoId, 
-            marcasBaterias, // Enviamos las marcas fijas independientes de cada punta
+            marcasBaterias, 
             frecuencia, 
+            tipo: tipoBateria,
             orientacion, 
             tiempoApagado,
             cambiosRealizados: { observaciones: cambiosRealizados.observaciones },
@@ -265,7 +276,6 @@ export default function FormularioBateria({ equipoId }) {
         <div style={{ backgroundColor: '#111827', padding: '20px', color: 'white', borderRadius: '15px', maxWidth: '900px', margin: '0 auto' }}>
             <h2 style={{ textAlign: 'center', color: '#60a5fa' }}>Equipo {equipoId}</h2>
             
-            {/* SECCIÓN DE MARCAS FIJAS PARA CADA PUNTA A LA VISTA */}
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px' }}>
                 <div style={{ flex: 1 }}>
                     <label style={{ display: 'block', marginBottom: '5px', color: '#60a5fa', fontWeight: 'bold' }}>Marca Punta Once:</label>
@@ -297,7 +307,6 @@ export default function FormularioBateria({ equipoId }) {
                 </div>
             </div>
             
-            {/* Selector de Fecha para registros pasados */}
             <div style={{ backgroundColor: '#1f2937', padding: '12px', borderRadius: '10px', marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#60a5fa' }}>
                     📅 Fecha y Hora del Mantenimiento:
@@ -313,18 +322,18 @@ export default function FormularioBateria({ equipoId }) {
             <div style={{ marginBottom: '15px' }}>
                 <label>Punta con vasos grandes (Solo aplica si hay baterías Chinas): </label>
                 <select 
-             value={orientacion} 
-             onChange={(e) => setOrientacion(e.target.value)} 
-             style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}
-             >
-             <option value="moreno">Moreno</option>
-             <option value="once">Once</option>
-             </select>
+                value={orientacion} 
+                onChange={(e) => setOrientacion(e.target.value)} 
+                style={{ padding: '5px', backgroundColor: '#374151', color: 'white' }}
+                >
+                <option value="moreno">Moreno</option>
+                <option value="once">Once</option>
+                </select>
             </div>
             
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                <div style={{ flex: 1 }}><label>Tiempo Apagado Once (minutos): </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.once} onChange={(e) => setTiempoApagado({...tiempoApagado, once: e.target.value})} /></div>
-                <div style={{ flex: 1 }}><label>Tiempo Apagado Moreno (minutos): </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.moreno} onChange={(e) => setTiempoApagado({...tiempoApagado, moreno: e.target.value})} /></div>
+                <div style={{ flex: 1 }}><label>Tiempo Apagado Once (minutos): </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.once} onChange={(e) => handleTiempoApagadoChange('once', e.target.value)} /></div>
+                <div style={{ flex: 1 }}><label>Tiempo Apagado Moreno (minutos): </label><input type="number" style={{ width: '100%', padding: '5px', backgroundColor: '#374151', color: 'white' }} value={tiempoApagado.moreno} onChange={(e) => handleTiempoApagadoChange('moreno', e.target.value)} /></div>
             </div>
             
             <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={{ width: '100%', padding: '10px', marginBottom: '20px', backgroundColor: '#374151', color: 'white' }}>
@@ -332,8 +341,18 @@ export default function FormularioBateria({ equipoId }) {
                 <option value="bimestral">Bimestral</option>
             </select>
 
-            {/* PANEL DE ASISTENTE CON SELECTOR MANUAL DE CAJONES, VOZ Y TEXTO */}
-            <div style={{ backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #3b82f6', textAlign: 'center' }}>
+            <div style={{ 
+                position: 'sticky', 
+                top: '10px', 
+                zIndex: 100, 
+                backgroundColor: '#1f2937', 
+                padding: '15px', 
+                borderRadius: '10px', 
+                marginBottom: '20px', 
+                border: '2px solid #3b82f6', 
+                textAlign: 'center',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.5)'
+            }}>
                 <h4 style={{ color: '#60a5fa', margin: '0 0 10px 0' }}>🤖 Panel de Control y Asistente</h4>
                 
                 <div style={{ marginBottom: '15px' }}>
@@ -366,24 +385,20 @@ export default function FormularioBateria({ equipoId }) {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '15px 0' }}>
                     <button 
                         onClick={iniciarEscucha} 
                         style={{ 
-                            padding: '10px 20px', 
-                            backgroundColor: isListening ? '#ef4444' : '#10b981', 
-                            color: 'white', 
-                            border: 'none', 
-                            borderRadius: '50px', 
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            fontSize: '14px'
+                             padding: '10px 20px', 
+                             backgroundColor: isListening ? '#ef4444' : '#16a34a',
+                             cursor: 'pointer',
+                             border: 'none',
+                             color: 'white',
+                             fontWeight: 'bold',
+                             borderRadius: '8px'
                         }}
-                    >
-                        {isListening ? "🎙️ Escuchando... (Hable ahora)" : "🎤 Activar Micrófono"}
-                    </button>
+                    >{isListening ? "🎙️ Escuchando..." : "🎤 Activar Micrófono"}</button>
                 </div>
-
                 <div style={{ display: 'flex', gap: '8px', maxWidth: '450px', margin: '0 auto' }}>
                     <input 
                         type="text" 
@@ -413,7 +428,7 @@ export default function FormularioBateria({ equipoId }) {
 
                 {transcript && <div style={{ marginTop: '8px', fontSize: '12px', color: '#e5e7eb', fontStyle: 'italic' }}>{transcript}</div>}
             </div>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Once</h3>{renderCajon(0, 'Cajón 1')}{renderCajon(1, 'Cajón 2')}</div>
                 <div><h3 style={{ borderBottom: '2px solid #60a5fa' }}>Punta Moreno</h3>{renderCajon(2, 'Cajón 1')}{renderCajon(3, 'Cajón 2')}</div>

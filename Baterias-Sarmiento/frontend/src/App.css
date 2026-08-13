@@ -182,3 +182,24 @@
     border-right-color: var(--border);
   }
 }
+@media print {
+  /* Forzamos a que todo el contenido entre compactamente sin espacios muertos */
+  body {
+    zoom: 85%; /* Achica ligeramente para asegurar que entre en una hoja */
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  /* Evita que los cajones se dividan torpemente entre una hoja y otra */
+  div {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Compactamos las tablas de 25 vasos para que resparen horizontalmente */
+  .grid-25-vasos {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 2px !important;
+  }
+}

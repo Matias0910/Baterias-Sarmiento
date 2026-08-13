@@ -7,7 +7,7 @@ export default function PlanillaPDF({ reporte }) {
 
     const generarPDF = () => {
         try {
-            const esChina = reporte.tipo === 'china';
+            const esChina = reporte.tipo === 'china'; // Ahora esto debería funcionar bien
             const esQuincenal = reporte.frecuencia?.toLowerCase() === 'quincenal';
             const doc = new jsPDF(esChina ? 'l' : 'p');
             const colorTrenes = [0, 150, 214];
@@ -15,8 +15,11 @@ export default function PlanillaPDF({ reporte }) {
             doc.setFontSize(16);
             doc.text("INFORME DE MANTENIMIENTO BATERIAS", 20, 15);
             doc.setFontSize(10);
-            doc.text(`Equipo: ${reporte.equipoId} | Fecha: ${new Date(reporte.fecha).toLocaleDateString()}`, 20, 22);
-            doc.text(`Tipo: ${esChina ? 'Batería CHINA/ESTANDAR' : 'Batería ESTÁNDAR'}`, 20, 27);
+            doc.text(`Equipo: ${reporte.equipoId} | Fecha: ${new Date(reporte.fecha).toLocaleDateString()}`, 20, 22);            
+            const marcaOnce = reporte.marcasBaterias?.once || 'N/A';
+            const marcaMoreno = reporte.marcasBaterias?.moreno || 'N/A';
+            doc.text(`Marcas -> Once: ${marcaOnce} | Moreno: ${marcaMoreno}`, 20, 27);
+
 
             doc.text(`Frecuencia: ${reporte.frecuencia?.toUpperCase()}`, 20, 32);
 
@@ -48,7 +51,7 @@ export default function PlanillaPDF({ reporte }) {
                             headStyles: { fillColor: colorTrenes }
                         });
                     } else {
-                        if (esChina && voltajes.length === 25) {
+                        if (esChina && voltajes.length === 25 && !esQuincenal) {
                             const gridBody = [];
                             for (let f = 0; f < 5; f++) {
                                 const fila = [`Fila ${f + 1}`];
@@ -75,17 +78,14 @@ export default function PlanillaPDF({ reporte }) {
                                 headStyles: { fillColor: colorTrenes, halign: 'center' },
                                 bodyStyles: { fontSize: 8, halign: 'center', cellPadding: 2 }
                             });
-                        } else if (esChina) {
-                            const head = [['Vaso', ...voltajes.map((_, i) => i + 1), 'TOTAL']];
+                        } else {
+                            // Nuevo formato para baterías estándar (4 vasos) en formato horizontal
+                            const head = [['', 'Vaso 1', 'Vaso 2', 'Vaso 3', 'Vaso 4', 'TOTAL']];
                             const body = [
                                 ['Voltaje (V)', ...voltajes.map(v => v?.toString() || '0'), formatNum(totalV)],
                                 ['Resist. (R)', ...resistencias.map(r => r?.toString() || '0'), formatNum(totalR)]
                             ];
-                            autoTable(doc, { startY: currentY + 2, head, body, theme: 'grid', headStyles: { fillColor: colorTrenes } });
-                        } else {
-                            const body = voltajes.map((v, i) => [i + 1, v?.toString() || '0', resistencias[i]?.toString() || '0']);
-                            body.push([{ content: 'TOTAL', styles: { fontStyle: 'bold' } }, formatNum(totalV), formatNum(totalR)]);
-                            autoTable(doc, { startY: currentY + 2, head: [['Vaso', 'Voltaje (V)', 'Resistencia (R)']], body, theme: 'grid', headStyles: { fillColor: colorTrenes } });
+                            autoTable(doc, { startY: currentY + 2, head, body, theme: 'grid', headStyles: { fillColor: colorTrenes, halign: 'center' }, bodyStyles: { halign: 'center' } });
                         }
                     }
                     currentY = doc.lastAutoTable.finalY + 10;

@@ -402,7 +402,7 @@ export default function FormularioBateria({ equipoId }) {
                 <div style={{ display: 'flex', gap: '8px', maxWidth: '450px', margin: '0 auto' }}>
                     <input 
                         type="text" 
-                        placeholder="O escribí el comando acá (ej: Vaso 5, 2.15, 1.5)..." 
+                        placeholder="El comando (ej: Vaso 5, 2.15, 1.5)..." 
                         value={textoManual}
                         onChange={(e) => setTextoManual(e.target.value)}
                         onKeyDown={(e) => {

@@ -2,12 +2,9 @@ import React from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-export default function PlanillaPDF({ reporte }) {
-    if (!reporte) return null;
-
-    const generarPDF = () => {
+const generarDocPDF = (reporte) => {
         try {
-            const esChina = reporte.tipo === 'china'; // Ahora esto debería funcionar bien
+            const esChina = reporte.tipo === 'china';
             const esQuincenal = reporte.frecuencia?.toLowerCase() === 'quincenal';
             const doc = new jsPDF(esChina ? 'l' : 'p');
             const colorTrenes = [0, 150, 214];
@@ -15,7 +12,7 @@ export default function PlanillaPDF({ reporte }) {
             doc.setFontSize(16);
             doc.text("INFORME DE MANTENIMIENTO BATERIAS", 20, 15);
             doc.setFontSize(10);
-            doc.text(`Equipo: ${reporte.equipoId} | Fecha: ${new Date(reporte.fecha).toLocaleDateString()}`, 20, 22);            
+            doc.text(`Equipo: ${reporte.equipoId} | Fecha: ${new Date(reporte.fecha).toLocaleDateString()}`, 20, 22);
             const marcaOnce = reporte.marcasBaterias?.once || 'N/A';
             const marcaMoreno = reporte.marcasBaterias?.moreno || 'N/A';
             doc.text(`Marcas -> Once: ${marcaOnce} | Moreno: ${marcaMoreno}`, 20, 27);
@@ -92,14 +89,14 @@ export default function PlanillaPDF({ reporte }) {
                 });
             }
 
-const observaciones = reporte.cambiosRealizados?.observaciones?.trim();
-const textoCambios = observaciones && observaciones !== "" ? observaciones : "Sin cambios registrados";
+            const observaciones = reporte.cambiosRealizados?.observaciones?.trim();
+            const textoCambios = observaciones && observaciones !== "" ? observaciones : "Sin cambios registrados";
 
-doc.setFontSize(14);
-doc.text("CAMBIO DE BATERIAS", 20, currentY);
-doc.setFontSize(10);
-const splitTexto = doc.splitTextToSize(textoCambios, esChina ? 250 : 170);
-doc.text(splitTexto, 20, currentY + 10);
+            doc.setFontSize(14);
+            doc.text("CAMBIO DE BATERIAS", 20, currentY);
+            doc.setFontSize(10);
+            const splitTexto = doc.splitTextToSize(textoCambios, esChina ? 250 : 170);
+            doc.text(splitTexto, 20, currentY + 10);
 
             doc.setFontSize(9);
             doc.setTextColor(100);
@@ -109,13 +106,52 @@ doc.text(splitTexto, 20, currentY + 10);
             doc.text(notaRango, 20, doc.internal.pageSize.getHeight() - 10);
             doc.setTextColor(0); // Volver a negro
 
-            const blobUrl = doc.output('bloburl');
-            window.open(blobUrl, '_blank');
+            return doc;
         } catch (error) {
             console.error("Error al generar PDF:", error);
             alert("Error al generar el PDF.");
+            return null;
+        }
+};
+
+export default function PlanillaPDF({ reporte }) {
+    if (!reporte) return null;
+
+    const getNombreArchivo = () => {
+        const fechaFormateada = new Date(reporte.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+        return `RC ${reporte.equipoId || 'N_A'} ${fechaFormateada}.pdf`;
+    };
+
+    const verPDF = () => {
+        const doc = generarDocPDF(reporte);
+        if (doc) {
+            doc.output('dataurlnewwindow', { filename: getNombreArchivo() });
         }
     };
 
-    return <button onClick={generarPDF} style={{ padding: '10px', backgroundColor: '#0096d6', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>📄 PDF</button>;
+    const descargarPDF = () => {
+        const doc = generarDocPDF(reporte);
+        if (doc) {
+            doc.save(getNombreArchivo());
+        }
+    };
+
+    return (
+        <>
+            <button 
+                onClick={verPDF} 
+                title="Ver PDF"
+                style={{ padding: '8px 12px', backgroundColor: '#0ea5e9', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+            >
+                Ver PDF
+            </button>
+            <button 
+                onClick={descargarPDF} 
+                title="Descargar PDF"
+                style={{ padding: '8px 12px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+            >
+                Descargar PDF
+            </button>
+        </>
+    );
 }

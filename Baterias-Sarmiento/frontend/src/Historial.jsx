@@ -73,7 +73,7 @@ export default function Historial({ equipoId, isGlobalView }) {
                                 <td style={{ padding: '10px', textAlign: 'center' }}>{rep.tipo}</td>
                                 <td style={{ padding: '10px', textAlign: 'center' }}>{rep.frecuencia}</td>
                                 <td style={{ padding: '10px', textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center' }}>
-                                    {/* Botón / Componente de PDF */}
+                                    {/* Componente con botones para Ver y Descargar PDF */}
                                     <PlanillaPDF reporte={rep} />
                                     
                                     {/* Botón de Eliminar */}

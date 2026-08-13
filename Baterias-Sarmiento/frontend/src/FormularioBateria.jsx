@@ -28,9 +28,11 @@ export default function FormularioBateria({ equipoId }) {
 
     // Función para guardar los tiempos de apagado solo cuando cambian
     const handleTiempoApagadoChange = (punta, valor) => {
-        const nuevosTiempos = { ...tiempoApagado, [punta]: valor };
-        setTiempoApagado(nuevosTiempos);
-        localStorage.setItem('tiempoApagado_' + equipoId, JSON.stringify(tiempoApagado));
+        setTiempoApagado(estadoAnterior => {
+            const nuevosTiempos = { ...estadoAnterior, [punta]: valor };
+            localStorage.setItem('tiempoApagado_' + equipoId, JSON.stringify(nuevosTiempos));
+            return nuevosTiempos;
+        });
     };
 
     // ... (el resto de los useEffects se mantienen igual)
